@@ -1,0 +1,12 @@
+// Script generated: 08/06/00 02:52:03
+
+translateModel("ThermoFluid.Examples.LumpedPipeAndValveTest01")
+WaterRes.p0 := 100000 ;
+WaterSource.dp0 := 1000;
+Volume.init.p0 := 101000;
+Volume.init.h0 := 400000;
+Loss.char.dp0   := 1000 ;
+Loss.char.mdot0 := 5 ;
+experiment StopTime=10
+simulate
+plot({"Volume.p[1]"});

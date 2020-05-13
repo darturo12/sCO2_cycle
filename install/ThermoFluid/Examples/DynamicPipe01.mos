@@ -1,0 +1,7 @@
+// Script generated: 08/24/00 08:44:29
+
+translateModel("ThermoFluid.Examples.DynamicPipe01")
+Pipe.geo.D := 0.1 ; 
+Pipe.geo.pipeangle := 0.0 ; 
+ 
+simulate

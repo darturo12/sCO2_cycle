@@ -1,0 +1,11 @@
+// Script generated: 08/09/00 11:53:52
+
+translateModel("ThermoFluid.Examples.LumpedPipeAndPumpTest01")
+WaterRes.p0 := 300000 ; 
+Pipe1.init.h0 := 300000 ; 
+Pipe1.init.p0r := 103000 ; 
+Volume.init.p0 := 102000 ; 
+Volume.init.h0 := 300000 ; 
+Pipe2.init.p0l := 309000 ; 
+Pipe2.init.p0r := 301000 ; 
+Pipe2.init.h0 := 300000 ; 

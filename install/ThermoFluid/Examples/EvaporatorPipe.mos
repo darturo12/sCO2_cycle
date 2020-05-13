@@ -1,0 +1,16 @@
+OutputCPUtime :=true;
+translateModel("ThermoFluid.Examples.EvaporatorPipe");
+Pipe.init.h0 := 425000 ; 
+Pipe.init.mdot0 := 1.0 ; 
+Pipe.char.mdot0 := 1.0 ; 
+Pipe.char.dp0 := 10000 ; 
+Pipe.geo.D := 0.08 ; 
+Source.mdot0 := 1 ; 
+Source.dp0 := 1300 ; 
+Source.h0 := 425000 ; 
+Step1.height := 20000*ones(15)/15 ;
+
+experiment StopTime=10.0 NumberOfIntervals=1000 Tolerance=1E-6;
+simulate
+
+plot({"Pipe.p[1]","Pipe.p[2]","Pipe.p[3]","Pipe.p[4]","Pipe.p[5]","Pipe.p[6]","Pipe.p[7]"});

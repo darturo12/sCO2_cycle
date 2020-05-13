@@ -1,0 +1,36 @@
+translateModel("ThermoFluid.Examples.BoilerPipe.FlowCharacteristic")
+
+init.p0l     	 := 248000;
+init.p0r     	 := 146000;
+init.mdot0   	 := .36;
+init.h0          := 450000;
+geo.D            := .025;
+geo.L            := .66;
+HeatD1.P         := 10000;                
+ResIn.p0         := 200000;                
+ResIn.h0         := 440000;
+Sink.p0          := 100000;
+Sink.h0          := 500000;
+HeatPipe.ktot    := 52.8;
+SineFlow.offset[1]    := 0.2;
+SineFlow.amplitude[1] := 0.16;
+SineFlow.freqHz[1]    := 0.01;
+SineFlow.phase[1]     := 1.57;
+HeatPipe.h[1]    := 4.43E+005;
+HeatPipe.h[2]    := 4.46E+005;
+HeatPipe.h[3]    := 4.49E+005;
+HeatPipe.h[4]    := 4.52E+005;
+HeatPipe.h[5]    := 4.55E+005;
+HeatPipe.h[6]    := 4.58E+005;
+HeatPipe.h[7]    := 4.61E+005;
+HeatPipe.h[8]    := 4.64E+005;
+HeatPipe.h[9]    := 4.67E+005;
+HeatPipe.h[10]   := 4.7E+005;
+HeatPipe.p_mean  := 2.82E+005;
+HeatPipe.mdot_mean := 0.36;
+
+experiment StopTime=50 NumberOfIntervals=1000 Tolerance=1E-6
+simulate
+
+// Preferably plot this with Flow1.mdot as independent variable
+plot({"HeatPipe.p[1]"});

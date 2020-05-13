@@ -1,0 +1,13 @@
+// Script generated: 08/06/00 21:52:57
+
+translateModel("ThermoFluid.Examples.WaterHeatExTestTNSC")
+Sink1.p0 := 100000 ; 
+Sink2.p0 := 100000 ; 
+Source1.h0 := 400000 ; 
+Hex.geo1.D := 0.1;
+Hex.geo2.D := 0.1;
+Hex.init1.h0 := 300000 ; 
+Hex.init2.h0 := 300000 ; 
+experiment StopTime=10
+simulate
+plot({"Hex.pipe1.T[1]","Hex.pipe1.T[2]","Hex.pipe1.T[3]","Hex.pipe1.T[4]","Hex.pipe1.T[5]","Hex.pipe2.T[5]","Hex.pipe2.T[4]","Hex.pipe2.T[3]","Hex.pipe2.T[2]","Hex.pipe2.T[1]"});

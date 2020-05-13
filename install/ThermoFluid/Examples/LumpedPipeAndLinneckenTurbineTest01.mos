@@ -1,0 +1,19 @@
+// Script generated: 08/06/00 03:30:54
+
+translateModel("ThermoFluid.Examples.LumpedPipeAndLinneckenTurbineTest01")
+WaterRes.p0 := 100000 ; 
+WaterRes.h0 := 3000000 ; 
+WaterSource.p0 := 140000 ; 
+WaterSource.h0 := 3000000 ;
+WaterSource.dp0 := 1000 ; 
+Loss.char.dp0 := 1000.0;
+Loss.char.A := 0.5;
+Loss.char.mdot0 = 1.0;
+Volume1.init.h0 := 3000000 ; 
+Volume1.init.p0 := 138000 ; 
+Volume2.init.p0 := 136000 ; 
+Volume2.init.h0 := 3000000 ;
+Turbine.R := 461;
+experiment StopTime=10
+simulate
+plot({"Turbine.W_Turbine"});

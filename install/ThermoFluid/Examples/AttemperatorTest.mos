@@ -1,0 +1,33 @@
+// Script generated: 05/01/01 22:55:39
+
+translateModel("ThermoFluid.Examples.PowerPlant.Tests.AttemperatorTest");
+Valve.D := 0.01 ;
+Attemperator1.BoilerHeatExchanger2.PipeDS1.geo.D = 0.1;
+Attemperator1.BoilerHeatExchanger2.PipeDS2.geo.D = 0.1;
+Attemperator1.BoilerHeatExchanger1.PipeDS1.geo.D = 0.1;
+Attemperator1.BoilerHeatExchanger1.PipeDS2.geo.D = 0.1;
+Attemperator1.BoilerHeatExchanger1.s_init.h0 := 3000000 ; 
+Attemperator1.BoilerHeatExchanger2.s_init.h0 := 3000000 ; 
+Attemperator1.BoilerHeatExchanger2.s_init.mdot0 := 4 ; 
+Attemperator1.BoilerHeatExchanger2.s_init.p0l := 118.1e5 ; 
+Attemperator1.BoilerHeatExchanger2.s_init.p0r := 118.05e5 ; 
+Attemperator1.BoilerHeatExchanger1.s_init.mdot0 := 4 ; 
+Attemperator1.BoilerHeatExchanger1.s_init.p0l := 120.91e5 ; 
+Attemperator1.BoilerHeatExchanger1.s_init.p0r := 120.96e5 ; 
+Attemperator1.BoilerHeatExchanger1.f_char.mdot0 := 20 ;
+Attemperator1.BoilerHeatExchanger2.f_char.mdot0 := 20 ;
+Attemperator1.BoilerHeatExchanger1.DynamicWall1.Tm[1] := 682 ; 
+Attemperator1.BoilerHeatExchanger1.DynamicWall1.Tm[2] := 682 ; 
+Attemperator1.BoilerHeatExchanger1.DynamicWall1.Tm[3] := 682 ; 
+Attemperator1.BoilerHeatExchanger1.DynamicWall1.Tm[4] := 682 ; 
+Attemperator1.BoilerHeatExchanger1.DynamicWall1.Tm[5] := 682 ; 
+Attemperator1.BoilerHeatExchanger2.DynamicWall1.Tm[1] := 681 ; 
+Attemperator1.BoilerHeatExchanger2.DynamicWall1.Tm[2] := 681 ; 
+Attemperator1.BoilerHeatExchanger2.DynamicWall1.Tm[3] := 681 ; 
+Attemperator1.BoilerHeatExchanger2.DynamicWall1.Tm[4] := 681 ; 
+Attemperator1.BoilerHeatExchanger2.DynamicWall1.Tm[5] := 681 ; 
+
+experiment StopTime=50 NumberOfIntervals=1000 Tolerance=1E-6
+simulate
+
+plot({"Attemperator1.BoilerHeatExchanger2.PipeDS1.T[5]"});

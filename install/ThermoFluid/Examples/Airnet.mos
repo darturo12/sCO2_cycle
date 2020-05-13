@@ -1,0 +1,113 @@
+// Script generated: 12/17/00 16:03:26
+// depending on the start values it makes sense to NOT store results
+// at events and have PATIENCE!
+translateModel("ThermoFluid.Examples.Airnet")
+
+p0nodes := {1.1e5,1.15e5,1.15e5,1.05e5};
+
+AirSourceD_pT1.mdot0 := 0.004;
+AirSourceD_pT1.dp0 := 2000;
+
+FlowSplitD1.geo.L := 0.03 ; 
+FlowSplitD1.geo.A := 4.0e-4 ; 
+FlowSplitD1.geo.C := 0.08 ; 
+FlowSplitD1.init.T0 := 300 ;
+FlowSplitD1.init.p0 := p0nodes[2];
+FlowSplitD1.mainfp.dp0 := 200 ; 
+FlowSplitD1.mainfp.mdot0 := 0.001 ; 
+FlowSplitD1.mainfp.A := 4.0e-4 ; 
+FlowSplitD1.mainfp.L := 0.02 ; 
+FlowSplitD1.branchfp.dp0 := 200 ; 
+FlowSplitD1.branchfp.mdot0 := 0 ; 
+FlowSplitD1.branchfp.mdot0 := 0.001 ; 
+FlowSplitD1.branchfp.A := 4.0e-4 ; 
+FlowSplitD1.branchfp.L := 1 ; 
+FlowSplitD1.branchfp.L := 0.02 ; 
+
+FlowSplitD2.geo.L := 0.03 ; 
+FlowSplitD2.geo.A := 4.0e-4 ; 
+FlowSplitD2.geo.C := 0.08 ; 
+FlowSplitD2.init.T0 := 300 ; 
+FlowSplitD2.init.p0 := p0nodes[3];
+FlowSplitD2.mainfp.dp0 := 200 ; 
+FlowSplitD2.mainfp.mdot0 := 0.001 ; 
+FlowSplitD2.mainfp.A := 4.0e-4 ; 
+FlowSplitD2.mainfp.L := 0.02 ; 
+FlowSplitD2.branchfp.dp0 := 200 ; 
+FlowSplitD2.branchfp.mdot0 := 0 ; 
+FlowSplitD2.branchfp.mdot0 := 0.001 ; 
+FlowSplitD2.branchfp.A := 4.0e-4 ; 
+FlowSplitD2.branchfp.L := 1 ; 
+FlowSplitD2.branchfp.L := 0.02 ; 
+
+FlowSplitD3.geo.L := 0.03 ; 
+FlowSplitD3.geo.A := 4.0e-4 ; 
+FlowSplitD3.geo.C := 0.08 ; 
+FlowSplitD3.init.T0 := 300 ; 
+FlowSplitD3.init.p0 := p0nodes[3];
+FlowSplitD3.mainfp.dp0 := 200 ; 
+FlowSplitD3.mainfp.mdot0 := 0.001 ; 
+FlowSplitD3.mainfp.A := 4.0e-4 ; 
+FlowSplitD3.mainfp.L := 0.02 ; 
+FlowSplitD3.branchfp.dp0 := 200; 
+FlowSplitD3.branchfp.mdot0 := 0 ; 
+FlowSplitD3.branchfp.mdot0 := 0.001 ; 
+FlowSplitD3.branchfp.A := 4.0e-4 ; 
+FlowSplitD3.branchfp.L := 1 ; 
+FlowSplitD3.branchfp.L := 0.02 ; 
+
+
+PipeDD1.geo.D := 0.02 ; 
+PipeDD1.geo.L := 0.150 ; 
+PipeDD1.char.mdot0 := 0.001 ; 
+PipeDD1.char.dp0 := 100.0;
+PipeDD1.init.p0l := p0nodes[1];
+PipeDD1.init.p0r := p0nodes[1];
+
+PipeDD2.geo.D := 0.02 ; 
+PipeDD2.geo.L := 0.15 ; 
+PipeDD2.char.mdot0 := 0.001 ; 
+PipeDD2.char.dp0 := 100.0;
+PipeDD2.init.p0l := p0nodes[2];
+PipeDD2.init.p0r := p0nodes[2];
+
+PipeDD3.geo.D := 0.02 ; 
+PipeDD3.geo.L := 0.15 ; 
+PipeDD3.char.mdot0 := 0.001 ; 
+PipeDD3.char.dp0 := 100.0;
+PipeDD3.init.p0l := p0nodes[2];
+PipeDD3.init.p0r := p0nodes[2];
+
+PipeDD4.geo.D := 0.02 ; 
+PipeDD4.geo.L := 0.15 ; 
+PipeDD4.char.mdot0 := 0.001 ; 
+PipeDD4.char.dp0 := 100.0;
+PipeDD4.init.p0l := p0nodes[3];
+PipeDD4.init.p0r := p0nodes[3];
+
+PipeDD5.geo.D := 0.02 ; 
+PipeDD5.geo.L := 0.15 ; 
+PipeDD5.char.mdot0 := 0.001 ; 
+PipeDD5.char.dp0 := 100.0;
+PipeDD5.init.p0l := p0nodes[3];
+PipeDD5.init.p0r := p0nodes[3];
+
+PipeDD6.geo.D := 0.02 ; 
+PipeDD6.geo.L := 0.10 ; 
+PipeDD6.char.mdot0 := 0.001 ; 
+PipeDD6.char.dp0 := 100.0;
+PipeDD6.init.p0l := p0nodes[3]
+PipeDD6.init.p0r := p0nodes[3]
+
+
+PipeDD7.geo.D := 0.02; 
+PipeDD7.geo.L := 0.10; 
+PipeDD7.char.mdot0 := 0.001 ; 
+PipeDD7.char.dp0 := 100.0;
+PipeDD7.init.p0l := p0nodes[3]
+PipeDD7.init.p0r := p0nodes[3]
+
+
+
+experiment StopTime=0.005 NumberOfIntervals=1000 Tolerance=1E-6
+simulate

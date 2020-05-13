@@ -1,0 +1,29 @@
+// Script generated: 08/11/00 17:43:08
+
+translateModel("ThermoFluid.Examples.FixedSpeedPumpTest1")
+
+
+WaterSource.p0 := 110000 ; 
+WaterSource.dp0 := 1000 ; 
+WaterSource.mdot0 := 0.1 ; 
+WaterRes.p0 := 289000 ; 
+Volume.init.p0 := 101000 ; 
+Volume.init.h0 := 300000 ; 
+PipeDS1.init.p0l := 109000 ; 
+PipeDS1.init.p0r := 101000 ; 
+PipeDS1.init.h0 := 300000 ; 
+PipeDS1.init.mdot0 := 0.1 ; 
+PipeDS1.char.dp0 := 2000 ; 
+PipeDS1.char.mdot0 := 0.1 ; 
+PipeDS2.init.p0l := 300000 ; 
+PipeDS2.init.p0r := 291000 ; 
+PipeDS2.init.h0 := 300000 ; 
+PipeDS2.init.mdot0 := 0.1 ; 
+PipeDS2.char.dp0 := 2000 ; 
+PipeDS2.char.mdot0 := 0.1 ; 
+Pump.char.Vdot0 := 0.0001 ; 
+
+PipeDS1.geo.D := 0.1 ; 
+PipeDS2.geo.D := 0.1 ; 
+
+simulate

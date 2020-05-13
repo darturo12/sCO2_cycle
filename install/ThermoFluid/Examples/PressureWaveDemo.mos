@@ -1,0 +1,27 @@
+translateModel("ThermoFluid.Examples.PressureWaveDemo")
+Source.dp0 := 1 ; 
+Source.mdot0 := 1 ; 
+Pipe.geo.L := 1.0 ; 
+Pipe.geo.D := 0.1 ; 
+Pipe.init.p0l := 120000 ; 
+Pipe.init.p0r := 120000 ; 
+Pipe.init.mdot0 := 0.0 ; 
+Pipe.char.dp0 := 50 ; 
+Pipe.char.mdot0 := 1.0 ; 
+Source.A := 0.00785 ; 
+
+experiment StopTime=0.05 NumberOfIntervals=2000 Tolerance=1E-6
+simulate
+plot({"Pipe.mdot[1]","Pipe.mdot[2]","Pipe.mdot[3]","Pipe.mdot[4]",
+"Pipe.mdot[5]","Pipe.mdot[6]","Pipe.mdot[7]","Pipe.mdot[8]",
+"Pipe.mdot[9]","Pipe.mdot[10]","Pipe.mdot[11]","Pipe.mdot[12]",
+"Pipe.mdot[13]","Pipe.mdot[14]","Pipe.mdot[15]","Pipe.mdot[16]",
+"Pipe.mdot[17]","Pipe.mdot[18]","Pipe.mdot[19]","Pipe.mdot[20]",
+"Pipe.mdot[21]","Pipe.mdot[22]","Pipe.mdot[23]","Pipe.mdot[24]"
+,"Pipe.mdot[25]","Pipe.mdot[26]","Pipe.mdot[27]","Pipe.mdot[28]",
+"Pipe.mdot[29]","Pipe.mdot[30]","Pipe.mdot[31]","Pipe.mdot[32]",
+"Pipe.mdot[33]","Pipe.mdot[34]","Pipe.mdot[35]","Pipe.mdot[36]",
+"Pipe.mdot[37]","Pipe.mdot[38]","Pipe.mdot[39]","Pipe.mdot[40]",
+"Pipe.mdot[41]","Pipe.mdot[42]","Pipe.mdot[43]","Pipe.mdot[44]",
+"Pipe.mdot[45]","Pipe.mdot[46]","Pipe.mdot[47]","Pipe.mdot[48]",
+"Pipe.mdot[49]","Pipe.mdot[50]","Pipe.mdot[51]"});

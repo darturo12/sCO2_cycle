@@ -1,0 +1,15 @@
+// Script generated: 08/10/00 18:34:03
+
+translateModel("ThermoFluid.Examples.BlasiusPipeTest01")
+Pipe.geo.D := 0.1 ; 
+Pipe.geo.pipeangle := 0.0 ; 
+Pipe.init.h0 := 300000 ; 
+Pipe.init.mdot0 := 1.0;
+Pipe.init.p0l := 109900;
+Pipe.init.p0r := 107100;
+Pipe.geo.L := 5.0;
+Sink.p0 := 107000 ; 
+Source.mdot0 := 1.0;
+Source.dp0 := 500;
+ 
+simulate

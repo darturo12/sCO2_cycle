@@ -1,0 +1,43 @@
+translateModel("ThermoFluid.Examples.BoilerPipe.FlowLimitCycle")
+
+// Limit-cykel på relativt hög trycknivå, men vid lägre
+//  tryck kan simulering fastna pga chattering
+// Fungerar bättre med Tol=1E-6!!
+geo.D            := .025;
+geo.L            := .66;
+init.p0l     	 := 225000;
+init.p0r     	 := 146000;
+init.mdot0   	 := .256;
+init.h0		 := 450000;
+HeatD1.P         := 10000;                
+ResIn.p0         := 200000;                
+ResIn.h0         := 450000;
+Sink.p0          := 150000;
+Sink.h0          := 500000;
+HeatPipe.ktot    := 52.8;
+HeatPipe.mode    := 0;
+// Viktigt med mode=0, mode=4 ger helt fel massflöden
+Valve1.char.dp0	 := 2000;
+Valve1.char.mdot0:= 0.15;
+Flow1.mdot0      := 0.15;
+HeatPipe.h[1]    := 4.53E+005;
+HeatPipe.h[2]    := 4.56E+005;
+HeatPipe.h[3]    := 4.59E+005;
+HeatPipe.h[4]    := 4.62E+005;
+HeatPipe.h[5]    := 4.65E+005;
+HeatPipe.h[6]    := 4.68E+005;
+HeatPipe.h[7]    := 4.71E+005;
+HeatPipe.h[8]    := 4.74E+005;
+HeatPipe.h[9]    := 4.77E+005;
+HeatPipe.h[10]   := 4.8E+005;
+HeatPipe.p_mean	 := 2.25E+005;
+HeatPipe.mdot_mean := 0.256;
+Source.h[1]      := 450000;
+Source.V[1]      := 0.01562; // -> p=2.284 bar
+Valve1.mdot	 := 0.256;
+
+experiment StopTime=100 NumberOfIntervals=1000 Tolerance=1E-6
+simulate
+
+// Preferably plot this with Valve1.mdot as independent variable
+plot({"HeatPipe.p[1]"});
