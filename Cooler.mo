@@ -6,7 +6,7 @@ model Cooler "simple cooler model"
 	replaceable package Medium = CarbonDioxide;
 
 	parameter String fluid = "R744";
-	parameter SI.Temperature T_in_des = from_degC(715);
+	parameter SI.Temperature T_in_des = from_degC(100);
 	parameter SI.Temperature T_out_des = from_degC(45);
 	parameter SI.MassFlowRate m_flow_des = 1000;
 	parameter SI.Pressure p_des = 8e6;

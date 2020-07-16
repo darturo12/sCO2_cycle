@@ -13,8 +13,8 @@ import Modelica.Math;
   parameter Modelica.SIunits.MassFlowRate m_flow = 811.461;
   parameter Modelica.SIunits.TemperatureDifference DT_approach = 5;
   // Media packages for hot (h) and cold (c) fluid ports
-  replaceable package MediumCold = sCO2_cycle.CarbonDioxide;
-  replaceable package MediumHot = sCO2_cycle.AIR "Hot stream medium";
+  replaceable package MediumCold = sCO2_cycle.AIR;
+  replaceable package MediumHot = sCO2_cycle.CarbonDioxide"Hot stream medium";
   // Cold inlet and outlet thermodynamic states
   MediumCold.ThermodynamicState state_c_in = MediumCold.setState_phX(port_c_in.p,inStream(port_c_in.h_outflow));
   MediumCold.ThermodynamicState state_c_out = MediumCold.setState_phX(port_c_in.p,port_c_out.h_outflow);

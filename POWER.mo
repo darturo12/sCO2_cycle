@@ -47,13 +47,13 @@ parameter Integer N=8;
 	parameter SI.HeatFlowRate Qnodes_des=Q_flow_des/N; 
 
 //VARIABLES DE INTERCAMBIADOR DE CALOR
-  //Declaracion de estados Termodonimacos 
+  //Declaracion de estados Termodonimacos
 	Medium_HTF.ThermodynamicState state_HTF_IN = Medium_HTF.setState_phX(HTF_IN.p,inStream(HTF_IN.h_outflow)) "Hot stream inlet thermodynamic state";
 	Medium_HTF.ThermodynamicState state_HTF_OUT = Medium_HTF.setState_pTX(HTF_IN.p,T_HTF_OUT) "Hot stream outlet thermodynamic state";
 	Medium_CO2.ThermodynamicState state_CO2_IN= Medium_CO2.setState_phX(p_out_comp,h_out_comp) "Cold stream inlet thermodynamic state";
 	Medium_CO2.ThermodynamicState state_CO2_OUT = Medium_CO2.setState_pTX(p_out_comp,T_CO2_OUT) "Cold stream outlet thermodynamic state";
 
-//Declaracion de Temperaturas 
+//Declaracion de Temperaturas
 	SI.Temperature T_HTF_IN(start = T_HTF_in_des) "Hot stream inlet temperature";
 	SI.Temperature T_HTF_OUT(start = T_HTF_out_des) "Hot stream outlet temperature";
 	SI.Temperature T_CO2_IN(start = T_CO2_in_des) "Cold stream inlet temperature";
@@ -131,7 +131,7 @@ SI.AbsolutePressure p_CO2;
 	SI.SpecificEnthalpy h_in_comp(start = h_in_comp_des) "Compressor inlet enthalpy";
 	SI.SpecificEntropy s_in_comp(start = s_in_comp_des) "Compressor inlet entropy";
 	SI.Density rho_in(start = rho_in_comp_des) "Compressor inlet density";
-	//PARAMETROS DEL COOLER 
+	//PARAMETROS DEL COOLER
 	parameter SI.Temperature T_in_cool_des = from_degC(568.538);
 	parameter SI.Temperature T_out_cool_des = from_degC(45);
 	//parameter SI.MassFlowRate m_flow_des = 1000;
@@ -279,6 +279,6 @@ W_NET=W_turb-W_comp;
 
 annotation(
     uses(Modelica(version = "3.2.3")),
- Icon(graphics = {Polygon(fillColor = {122, 122, 122}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-40, 50}, {40, 50}, {60, -60}, {-60, -60}, {-40, 50}}), Polygon(fillColor = {255, 255, 0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-28, -20}, {0, -10}, {-8, -4}, {-28, -20}}), Polygon(fillColor = {255, 255, 0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{18, -2}, {-10, -12}, {-2, -18}, {18, -2}})}),
+ Icon(graphics = {Polygon( fillColor = {122, 122, 122}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-40, 50}, {40, 50}, {60, -60}, {-60, -60}, {-40, 50}}), Polygon(fillColor = {255, 255, 0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{-28, -20}, {0, -10}, {-8, -4}, {-28, -20}}), Polygon(fillColor = {255, 255, 0}, pattern = LinePattern.None, fillPattern = FillPattern.Solid, points = {{18, -2}, {-10, -12}, {-2, -18}, {18, -2}})}, coordinateSystem(initialScale = 0.1)),
  experiment(StartTime = 0, StopTime = 1, Tolerance = 1e-6, Interval = 0.002));
 end POWER;

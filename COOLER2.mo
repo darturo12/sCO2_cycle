@@ -1,6 +1,6 @@
 within sCO2_cycle;
 
-model Heater "A simple counterflow heat exchanger model based on LMTD method"
+model COOLER2 "A simple counterflow heat exchanger model based on LMTD method"
 
 import Modelica.SIunits.Conversions.*;
 import CN = Modelica.Constants;
@@ -8,9 +8,9 @@ import SI = Modelica.SIunits;
 import Modelica.Math;
 
 
-	replaceable package Medium_A = SolarTherm.Media.ChlorideSaltPH.ChlorideSaltPH_ph "Hot stream medium";
+	replaceable package Medium_A = sCO2_cycle.CarbonDioxide "Hot stream medium";
 
-	replaceable package Medium_B = sCO2_cycle.CarbonDioxide "Cold stream medium";
+	replaceable package Medium_B = sCO2_cycle.AIR "Cold stream medium";
 
 //Definicion de parametros de diseño 
 parameter Boolean fixed_m_flow=true
@@ -18,19 +18,19 @@ annotation(Evaluate = true,HideResult = true,choices(checkBox = true));
 parameter SI.MassFlowRate m_flow=1000;
 parameter Integer nodes =9;
 parameter Integer N=8;
-	parameter String fluid = "R744";
+	parameter String fluid = "R729";
     parameter SI.Area A = 2000 "Heat transfer surface area";
 	parameter SI.CoefficientOfHeatTransfer U = 1000 "Heat tranfer coefficient";
-	SI.TemperatureDifference dT_approach  "Minimum temperature difference between streams";
+	//SI.TemperatureDifference dT_approach(start=10)  "Minimum temperature difference between streams";
 	parameter SI.TemperatureDifference LMTD_des = 40.36 "Logarithmic mean temperature difference at design";
 	//parameter SI.TemperatureDifference LMTD = 40.36 "Logarithmic mean temperature difference at design";
-	parameter SI.MassFlowRate m_flow_a_des = 1000 "Hot stream mass flow rate at design";
-	parameter SI.Pressure p_a_des = 1e5 "Hot stream pressure";
-	parameter SI.Pressure p_b_des = 24e5 "Cold stream pressure";
-	parameter SI.Temperature T_a_in_des = from_degC(715) "Cold stream outlet temperature at design";
-	parameter SI.Temperature T_a_out_des = from_degC(500) "Cold stream outlet temperature at design";
-	parameter SI.Temperature T_b_in_des = from_degC(113) "Cold stream outlet temperature at design";
-	parameter SI.Temperature T_b_out_des = from_degC(715) "Cold stream outlet temperature at design";
+	parameter SI.MassFlowRate m_flow_a_des = 77.41 "Hot stream mass flow rate at design";
+	parameter SI.Pressure p_a_des = 8e6 "Hot stream pressure";
+	parameter SI.Pressure p_b_des = 1e5 "Cold stream pressure";
+	parameter SI.Temperature T_a_in_des = from_degC(600) "Cold stream outlet temperature at design";
+	parameter SI.Temperature T_a_out_des = from_degC(100) "Cold stream outlet temperature at design";
+	parameter SI.Temperature T_b_in_des = from_degC(40) "Cold stream outlet temperature at design";
+	parameter SI.Temperature T_b_out_des = from_degC(500) "Cold stream outlet temperature at design";
 	parameter SI.SpecificEnthalpy h_a_in_des = Medium_A.specificEnthalpy(Medium_A.setState_pTX(p_a_des,T_a_in_des)) "Hot stream inlet enthalpy at design";
 	parameter SI.SpecificEnthalpy h_a_out_des = Medium_A.specificEnthalpy(Medium_A.setState_pTX(p_a_des,T_a_out_des)) "Hot stream outlet enthalpy at design";
 	parameter SI.SpecificEnthalpy h_b_in_des = Medium_B.specificEnthalpy(Medium_B.setState_pTX(p_b_des,T_b_in_des)) "Cold stream inlet enthalpy at design";
@@ -106,15 +106,15 @@ if fixed_m_flow then
 
 	T_a_in = Medium_A.temperature(state_a_in);
 
-	T_b_in = Medium_B.temperature(state_b_in);
+	T_b_in = stprops("T","P",port_b_in.p,"H",inStream(port_b_in.h_outflow),"R729");
 
 	
 
-	dT_approach = T_a_out - T_b_in;
+	//dT_approach = T_a_out - T_b_in;
 
 	Q_flow = port_a_in.m_flow*(inStream(port_a_in.h_outflow) - port_a_out.h_outflow);
 
-	LMTD = ((T_a_in-T_b_out)-(dT_approach)/(Math.log(((T_a_in-T_b_out)/(dT_approach)))));
+	LMTD = ((T_a_in-T_b_out)-(T_a_out - T_b_in)/(Math.log(((T_a_in-T_b_out)/(T_a_out - T_b_in)))));
 
 	Q_flow = U*A*LMTD;
 
@@ -263,4 +263,4 @@ if fixed_m_flow then
 		preserveAspectRatio=true,
 
 		extent={{-40,-40},{40,40}})));
-end Heater;
+end COOLER2;

@@ -1,6 +1,6 @@
 within sCO2_cycle;
 
-model TestHeater
+model simple
   import SolarTherm.{Models,Media};
   import Modelica.SIunits.Conversions.from_degC;
   import SI = Modelica.SIunits;
@@ -11,7 +11,6 @@ model TestHeater
   import Modelica.Blocks;
   replaceable package MediumHTF = SolarTherm.Media.ChlorideSaltPH.ChlorideSaltPH_ph;
   replaceable package MediumPB = CarbonDioxide;
-  replaceable package MediumCold = sCO2_cycle.AIR;
   extends Modelica.Icons.Example;
   Real w_net;
   Real eta_cycle;
@@ -23,7 +22,7 @@ model TestHeater
   parameter SI.SpecificEnthalpy h_htf_out = MediumHTF.specificEnthalpy(MediumHTF.setState_pTX(p_htf, T_htf_out_des)) "HTF outlet specific enthalpy to power block at design";
   //Power cycle
   parameter SI.Temperature T_turb_in_des = from_degC(715) "Turbine inlet temperature at design";
-  parameter SI.Temperature T_comp_in_des = from_degC(140) "Compresor outlet temperature at design";
+  parameter SI.Temperature T_comp_in_des = from_degC(45) "Compresor outlet temperature at design";
   parameter SI.Pressure p_turb_in_des = 24e6 "Turbine inlet temperature at design";
   parameter SI.Pressure p_comp_in_des = 8e6 "Compresor outlet temperature at design";
   parameter SI.Efficiency eta_comp = 0.89 "Compresor isentropic efficiency at design";
@@ -55,46 +54,65 @@ model TestHeater
   sCO2_cycle.Turbine turbine(m_flow_des = 77.4) annotation(
     Placement(visible = true, transformation(origin = {48, -20}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
   sCO2_cycle.Compressor Compresor(m_flow_des = 77.4) annotation(
-    Placement(visible = true, transformation(origin = {-74, -14}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
-  sCO2_cycle.COOLER2 cooler2(fixed_m_flow = false) annotation(
-    Placement(visible = true, transformation(origin = {-13, -33}, extent = {{-9, -9}, {9, 9}}, rotation = 0)));
-  Modelica.Fluid.Sources.MassFlowSource_h sinkCold(redeclare package Medium = MediumCold, m_flow = -100, nPorts = 1, use_m_flow_in = false) annotation(
-    Placement(visible = true, transformation(origin = {16, -49}, extent = {{4, -5}, {-4, 5}}, rotation = 0)));
-  Modelica.Fluid.Sources.FixedBoundary sourceCold(redeclare package Medium = MediumCold, T = 40 + 273.15, nPorts = 1, p = 1e5, use_T = true, use_p = true) annotation(
-    Placement(visible = true, transformation(origin = {-39, -48}, extent = {{-5, -6}, {5, 6}}, rotation = 0)));
+    Placement(visible = true, transformation(origin = {-102, -18}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+  sCO2_cycle.Cooler cooler(m_flow_des = 77.4) annotation(
+    Placement(visible = true, transformation(origin = {-54, -44}, extent = {{20, 20}, {-20, -20}}, rotation = 0)));
+  SolarTherm.Models.PowerBlocks.sCO2Cycle.DirectDesign.HeatRecuperatorDTAve Rec(N_q = 20) annotation(
+    Placement(visible = true, transformation(origin = {10, -38}, extent = {{-26, -26}, {26, 26}}, rotation = 0)));
 initial equation
-  heat.p_in_CO2_des = 24e6;
-  heat.p_out_CO2_des = 24e6;
+// heat.p_in_CO2_des = 24e6;
+//heat.p_out_CO2_des = 24e6;
   heat.p_in_HTF_des = 1e5;
   heat.p_out_HTF_des = 1e5;
-  heat.m_HTF_des = 77.41;
-  heat.m_CO2_des = 77.41;
+  heat.m_HTF_des = 100;
+//heat.m_CO2_des = 77.41;
 //heat.ratio_m_des = 33452 / 77.41;
-  heat.h_in_CO2_des = h_comp_out_des;
+//heat.h_in_CO2_des = Rec.h_out_comp_des;
   heat.h_in_HTF_des = h_htf_in;
+//entlapias
+// heat.h_out_CO2_des = turbine.h_in_des;
+  Rec.h_in_turb_des = turbine.h_out_des;
+//cooler.h_in=Rec.h_out_turb_des;
+//Compresor.h_in_des=cooler.h_out_des;
+  Rec.h_in_comp_des = Compresor.h_out_des;
+  heat.h_in_CO2_des = Rec.h_out_comp_des;
+//pressure
+// heat.p_out_CO2_des= turbine.p_in_des;
+  Rec.p_in_turb_des = turbine.p_out_des;
+//cooler.p_des=Rec.p_out_turb_des;
+//Compresor.p_in_des=cooler.p_des;
+  Rec.p_in_comp_des = Compresor.p_out_des;
+  heat.p_in_CO2_des = Rec.p_out_comp_des;
+//masa
+//turbine.m_flow_des= heat.m_CO2_des;
+  Rec.m_comp_des = Compresor.m_flow_des;
+  Rec.m_turb_des = turbine.m_flow_des;
+//cooler.m_flow_des = Rec.m_turb_des;
+//Compresor.m_flow_des = cooler.m_flow_des;
+  Rec.m_turb_des = heat.m_CO2_des;
 equation
 //exchanger.CO2_port_a.m_flow = exchanger.m_CO2_des;
   w_net = turbine.W_turb - Compresor.W_comp;
   eta_cycle = w_net / heat.Q_HX;
   connect(sinkHot.ports[1], heat.from_HTF_port_b) annotation(
-    Line(points = {{-76, 26}, {-38, 26}, {-38, 22}, {-38, 22}}, color = {0, 127, 255}));
+    Line(points = {{-76, 26}, {-38, 26}, {-38, 22}, {-38, 22}}, color = {0, 127, 255}, thickness = 1, arrow = {Arrow.Filled, Arrow.None}));
   connect(heat.from_HTF_port_a, sourceHot.ports[1]) annotation(
-    Line(points = {{6, 22}, {50, 22}, {50, 20}, {50, 20}}, color = {0, 127, 255}));
-  connect(Compresor.port_b, heat.from_CO2_port_a) annotation(
-    Line(points = {{-62, -10}, {-60, -10}, {-60, 2}, {-38, 2}}, color = {0, 127, 255}));
+    Line(points = {{6, 22}, {50, 22}, {50, 20}, {50, 20}}, color = {204, 0, 0}, thickness = 1, arrow = {Arrow.Filled, Arrow.None}));
+  connect(cooler.port_b, Compresor.port_a) annotation(
+    Line(points = {{-66, -36}, {-69, -36}, {-69, -26}, {-114, -26}}, color = {0, 127, 255}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
   connect(heat.from_CO2_port_b, turbine.port_a) annotation(
-    Line(points = {{6, 2}, {36, 2}, {36, -16}, {36, -16}}, color = {0, 127, 255}));
-  connect(Compresor.port_a, cooler2.port_a_out) annotation(
-    Line(points = {{-86, -22}, {-86, -36}, {-36, -36}, {-36, -28}, {-22, -28}}, color = {0, 127, 255}));
-  connect(cooler2.port_a_in, turbine.port_b) annotation(
-    Line(points = {{-4, -28}, {42, -28}, {42, -34}, {60, -34}, {60, -28}, {60, -28}}, color = {0, 127, 255}));
-  connect(sourceCold.ports[1], cooler2.port_b_in) annotation(
-    Line(points = {{-34, -48}, {-22, -48}, {-22, -38}, {-22, -38}}, color = {0, 127, 255}));
-  connect(cooler2.port_b_out, sinkCold.ports[1]) annotation(
-    Line(points = {{-4, -38}, {0, -38}, {0, -49}, {12, -49}}, color = {0, 127, 255}));
+    Line(points = {{6, 2}, {36, 2}, {36, -16}, {36, -16}}, color = {204, 0, 0}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
+  connect(turbine.port_b, Rec.from_turb_port_a) annotation(
+    Line(points = {{60, -28}, {60, -28}, {60, -46}, {28, -46}, {28, -46}}, color = {204, 0, 0}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
+  connect(Rec.from_turb_port_b, cooler.port_a) annotation(
+    Line(points = {{-8, -46}, {-20, -46}, {-20, -36}, {-42, -36}}, color = {0, 127, 255}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
+  connect(Compresor.port_b, Rec.from_comp_port_a) annotation(
+    Line(points = {{-90, -14}, {-8, -14}, {-8, -30}}, color = {0, 127, 255}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
+  connect(Rec.from_comp_port_b, heat.from_CO2_port_a) annotation(
+    Line(points = {{28, -30}, {28, -30}, {28, -10}, {-46, -10}, {-46, 2}, {-38, 2}, {-38, 2}}, color = {204, 0, 0}, thickness = 1, arrow = {Arrow.None, Arrow.Filled}));
   annotation(
     Diagram(coordinateSystem(extent = {{-120, -60}, {140, 60}}, initialScale = 0.1)),
-    Icon(coordinateSystem(extent = {{-140, -120}, {160, 140}})),
+    Icon(coordinateSystem(extent = {{-140, -120}, {160, 140}}, initialScale = 0.1)),
     experiment(StopTime = 43200, StartTime = 0, Tolerance = 0.0001, Interval = 300),
     __Dymola_experimentSetupOutput,
     Documentation(info = "<html>
@@ -109,4 +127,4 @@ equation
 	</html>"),
     __OpenModelica_simulationFlags(lv = "LOG_STATS", outputFormat = "mat", s = "dassl"),
     uses(Modelica(version = "3.2.2"), SolarTherm(version = "0.2")));
-end TestHeater;
+end simple;

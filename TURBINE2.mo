@@ -1,5 +1,6 @@
 within sCO2_cycle;
-model Turbine "Off-design turbine model"
+
+model TURBINE2 "Off-design turbine model"
 	import Modelica.SIunits.Conversions.*;
 	import SI = Modelica.SIunits;
 
@@ -24,7 +25,7 @@ model Turbine "Off-design turbine model"
 	parameter SI.SpecificEnthalpy h_out_isen_des(fixed = false) "Turbine outlet isentropic enthalpy at design";
 	parameter SI.Density rho_out_des(fixed = false) "Turbine outlet density at design";
 	parameter SI.Velocity C_spouting_des(fixed = false) "Turbine spouting velocity at design";
-
+Real V_turb;
 	//Dynamic variables
 	SI.AbsolutePressure p_in(start = p_in_des) "Turbine inlet pressure";
 	SI.AbsolutePressure p_out(start = p_out_des) "Turbine outlet pressure";
@@ -37,7 +38,7 @@ model Turbine "Off-design turbine model"
 	SI.Efficiency eta_turb "Turbine efficiency";
 	SI.Power W_turb "Turbine power output";
 	SI.Temperature T_out;
-
+    
 	//Inlet and outlet fluid ports
 	Modelica.Fluid.Interfaces.FluidPort_a port_a(redeclare package Medium = Medium) annotation(
 		Placement(visible = true, transformation(origin = {-60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0), 
@@ -46,7 +47,8 @@ model Turbine "Off-design turbine model"
 	Modelica.Fluid.Interfaces.FluidPort_b port_b(redeclare package Medium = Medium) annotation(
 		Placement(visible = true, transformation(origin = {60, -40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), 
 		iconTransformation(origin = {60, -40}, extent = {{-6, -6}, {6, 6}}, rotation = 0)));
-
+  Modelica.Mechanics.Rotational.Interfaces.Flange_b shaft_b annotation(
+    Placement(visible = true, transformation(extent = {{-50, -14}, {-30, 6}}, rotation = 0), iconTransformation(extent = {{-50, -14}, {-30, 6}}, rotation = 0)));
 initial algorithm
 	h_in_des := stprops("H","T",T_in_des,"P",p_in_des,fluid);
 	s_in_des := stprops("S","T",T_in_des,"P",p_in_des,fluid);
@@ -77,14 +79,14 @@ equation
 	port_b.h_outflow = h_out;
 	rho_out = stprops("D","P",p_in,"H",h_out,fluid);
 	T_out=stprops("T","P",p_out,"H",h_out,fluid);
+V_turb=port_a.m_flow/rho_out;
 
 	//Spouting velocity and turbine power output
 	C_spouting = (2 *sqrt((h_in - h_out_isen)));
 	eta_turb = 2*eta_design*(v_tip_des/C_spouting)*sqrt(1 - (v_tip_des/C_spouting)^2);
 	W_turb = port_a.m_flow * (h_in - h_out);
-
-	//Should not have reverse flow
-	port_a.h_outflow = 0.0;
+der(shaft_b.phi)=2*V_turb*Modelica.Constants.pi;
+shaft_b.tau=W_turb/(2*V_turb*Modelica.Constants.pi);
 
 annotation(
 	Documentation(info = "<html>
@@ -97,5 +99,4 @@ annotation(
 	Diagram(
 	graphics = {Text(origin = {-48, -48}, extent = {{18, 80}, {78, 16}}, textString = "TURBINE"), Polygon(origin = {0, -10}, points = {{-40, 40}, {-40, -20}, {40, -50}, {40, 70}, {-40, 40}, {-40, 40}}), Line(origin = {-50, 20}, points = {{-10, 0}, {10, 0}, {10, 0}}), Line(origin = {50.111, -40.1649}, points = {{-10, 0}, {10, 0}, {10, 0}})}, coordinateSystem(initialScale = 0.1)),
 	Icon(graphics = {Text(origin = {-20, 12}, extent = {{-10, 12}, {52, -34}}, textString = "TURBINE"), Ellipse(extent = {{56, 58}, {56, 58}}, endAngle = 360), Polygon(origin = {11, 7}, points = {{-51, 23}, {-51, -37}, {29, -67}, {29, 53}, {-51, 23}}), Line(origin = {-50, 20}, points = {{10, 0}, {-10, 0}, {-10, 0}}), Line(origin = {50, -39.8501}, points = {{-10, 0}, {10, 0}, {10, 0}})}, coordinateSystem(initialScale = 0.1)));
-end Turbine;
-
+end TURBINE2;
