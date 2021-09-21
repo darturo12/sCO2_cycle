@@ -36,12 +36,14 @@ import Modelica.Math;
     Placement(visible = true, transformation(origin = {-24, 11}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-40, 21}, extent = {{-2.5, -2.5}, {2.5, 2.5}}, rotation = 0)));
   Modelica.Fluid.Interfaces.FluidPort_b port_c_out(redeclare package Medium=MediumCold)annotation(
     Placement(visible = true, transformation(origin = {22, -13}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {40, -21}, extent = {{-2.5, -2.5}, {2.5, 2.5}}, rotation = 0)));
+Real h;
+
 equation
   // Temperatures
-  T_c_in = MediumCold.temperature(state_c_in);
-  T_c_out = MediumCold.temperature(state_c_out);
-  T_h_in =stprops("T","P",port_h_in.p,"H",inStream(port_h_in.h_outflow),"R729");
-  T_h_out = stprops("T","P",port_h_in.p,"H",port_h_out.h_outflow,"R729");
+  T_c_in = stprops("T","P",port_c_in.p,"H",inStream(port_c_in.h_outflow),"R729");
+  T_c_out = stprops("T","P",port_c_in.p,"H",port_c_out.h_outflow,"R729");
+  T_h_in =stprops("T","P",port_h_in.p,"H",inStream(port_h_in.h_outflow),"R744");
+  T_h_out = stprops("T","P",port_h_in.p,"H",port_h_out.h_outflow,"R744");
 
   // Mass balances
   port_h_in.m_flow + port_h_out.m_flow = 0; // Hot stream
@@ -52,7 +54,8 @@ equation
   end if;
 
   // Energy balance
-  Q_flow = port_h_in.m_flow*(inStream(port_h_in.h_outflow) - port_h_out.h_outflow);
+  h=inStream(port_h_in.h_outflow);
+  Q_flow = -port_h_in.m_flow*(-inStream(port_h_in.h_outflow) + port_h_out.h_outflow);
   Q_flow = U*A*LMTD;
   Q_flow = port_c_in.m_flow*(port_c_out.h_outflow -inStream(port_c_in.h_outflow));
   

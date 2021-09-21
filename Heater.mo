@@ -21,7 +21,7 @@ parameter Integer N=8;
 	parameter String fluid = "R744";
     parameter SI.Area A = 2000 "Heat transfer surface area";
 	parameter SI.CoefficientOfHeatTransfer U = 1000 "Heat tranfer coefficient";
-	SI.TemperatureDifference dT_approach  "Minimum temperature difference between streams";
+
 	parameter SI.TemperatureDifference LMTD_des = 40.36 "Logarithmic mean temperature difference at design";
 	//parameter SI.TemperatureDifference LMTD = 40.36 "Logarithmic mean temperature difference at design";
 	parameter SI.MassFlowRate m_flow_a_des = 1000 "Hot stream mass flow rate at design";
@@ -51,14 +51,8 @@ parameter Integer N=8;
 	SI.Temperature T_a_out(start = T_a_out_des) "Hot stream outlet temperature";
 	SI.Temperature T_b_in "Cold stream inlet temperature";
 	SI.Temperature T_b_out(start = T_b_out_des) "Cold stream outlet temperature";
-	SI.Temperature[nodes] TCO2 ;
-    SI.Temperature[nodes] THTF  ;
-	SI.HeatFlowRate Q_flow(start = Q_flow_des) ;
-	 SI.SpecificEnthalpy[nodes] hCO2;
-     SI.SpecificEnthalpy[nodes] hHTF;
-		SI.HeatFlowRate Qnodes(start=Qnodes_des);
-		//SI.HeatFlowRate Q_flow(start = Q_flow_des) "Heat flow from hot to cold side";
-	SI.TemperatureDifference LMTD(start = LMTD_des) "Logarithmic mean temperature difference";
+	
+
 	
 
 //HTF FLUID (FLUIDO CALIENTE )
@@ -108,20 +102,10 @@ if fixed_m_flow then
 
 	T_b_in = Medium_B.temperature(state_b_in);
 
+	T_a_out=T_b_in+20;
+	T_b_out=T_a_in-20;
+
 	
-
-	dT_approach = T_a_out - T_b_in;
-
-	Q_flow = port_a_in.m_flow*(inStream(port_a_in.h_outflow) - port_a_out.h_outflow);
-
-	LMTD = ((T_a_in-T_b_out)-(dT_approach)/(Math.log(((T_a_in-T_b_out)/(dT_approach)))));
-
-	Q_flow = U*A*LMTD;
-
-	//LMTD = ((T_a_in-T_b_out)-dT_approach)/(Math.log((T_a_in-T_b_out)/dT_approach));
-
-	Q_flow = port_b_in.m_flow*(port_b_out.h_outflow - inStream(port_b_in.h_outflow));
-
 
 	port_a_in.p - port_a_out.p = 0;
   port_b_in.p - port_b_out.p = 0;
@@ -133,26 +117,6 @@ if fixed_m_flow then
 
 	port_b_in.h_outflow = h_b_in_des;
 	
-	TCO2[1]=T_b_out ;
-    THTF[1]=T_a_in ;
-    TCO2[nodes]=T_b_in;
-    THTF[nodes]=T_a_out;
-	hCO2[1]=port_b_out.h_outflow;
-	 hHTF[1]=inStream(port_a_in.h_outflow);
-	 hCO2[nodes]=inStream(port_b_in.h_outflow);
-	 hHTF[nodes]=port_a_out.h_outflow;
-	 Qnodes=Q_flow/nodes;
-	 
-	 for i in 1:7 loop
-	 hCO2[i+1]=hCO2[i]-(Qnodes/port_b_in.m_flow);
-	 hHTF[i+1]=hHTF[i]-(Qnodes/port_a_in.m_flow);
-	 TCO2[i+1]=stprops("T","H",hCO2[i+1],"P",port_b_out.p,fluid);///ojooo
-	 //THTF[i+1]=stprops("T","P",port_a_out.p,"H",hHTF[i+1],fluid);
-	 //CO2[i+1]=Medium_CO2.temperature(Medium_CO2.setState_phX(p_out_comp,hCO2[i+1]));
-	 //stprops("T","H",hCO2[i+1],"P",p_out_comp,fluid);///ojooo
-	 THTF[i+1]=Medium_A.temperature(Medium_A.setState_phX(port_a_in.p,hHTF[i+1]));
-	 end for;
-	 
 
 	
 

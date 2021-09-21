@@ -13,25 +13,25 @@ parameter Boolean fixed_m_flow = true "True when"
     parameter Real ratio_m_des = 1 "ratio of m_comp_des/m_turb_des; we suppose m_turb_des=1, and then scale-up";
     parameter Real pinchRecuperator = 25 "pinch of the recuperator. Imposed as a closing equation for on-design";
     parameter Modelica.SIunits.ThermalConductance UA_HTR(fixed = false) "Conductance of the overall HX";
-    parameter Modelica.SIunits.Power P_nom_des = 1e5;
+    parameter Modelica.SIunits.Power P_nom_des = 1e7;
     parameter Modelica.SIunits.ThermalConductance UA_dis[N_q - 1](each fixed = false, each start = 0.04 * P_nom_des) "on-design conductance of the heat recuperator";
-    parameter Medium.ThermodynamicState[N_q] state_CO2_des(each p.fixed = false, each h.fixed = false,h.start = {530000 + i / N_q * 500000 for i in 1:N_q});
-    parameter MediumHTF.ThermodynamicState[N_q] state_HTF_des(each p.fixed = false, each h.fixed = false, h.start = {-178871 + i / N_q * 527800 for i in 1:N_q});
+    parameter Medium.ThermodynamicState[N_q] state_CO2_des(each p.fixed = false, each h.fixed = false,h.start = {950081 + i / N_q * 249919 for i in 1:N_q});
+    parameter MediumHTF.ThermodynamicState[N_q] state_HTF_des(each p.fixed = false, each h.fixed = false, h.start = {178871 + i / N_q * 527800 for i in 1:N_q});
     parameter Medium.Temperature[N_q] T_HTF_des(each fixed = false, start = {650 + 273.15 + i / N_q * 120for i in 1:N_q});
-    parameter Medium.Temperature[N_q] T_CO2_des(each fixed = false, start = {120+ 273.15 + i / N_q * 650 for i in 1:N_q});
+    parameter Medium.Temperature[N_q] T_CO2_des(each fixed = false, start = {480+ 273.15 + i / N_q * 290 for i in 1:N_q});
     parameter Modelica.SIunits.TemperatureDifference[N_q] deltaT_des(each fixed = false, each start = 25);
     parameter Modelica.SIunits.MassFlowRate m_CO2_des(fixed = false, start = P_nom_des / 1e5) "on-design mass flow from the compressor";
     parameter Modelica.SIunits.MassFlowRate m_HTF_des(fixed = false, start = P_nom_des / 1e5) "on-design mass flow from the turbine";
     parameter Modelica.SIunits.HeatFlowRate Q_HX_des(fixed = false);
     parameter Modelica.SIunits.HeatFlowRate Q_dis_des(fixed = false, start=18600);
     parameter Modelica.SIunits.SpecificEnthalpy h_in_HTF_des(fixed = false);
-    parameter Modelica.SIunits.SpecificEnthalpy h_out_HTF_des(fixed = false, start= 855e3);
+    parameter Modelica.SIunits.SpecificEnthalpy h_out_HTF_des(fixed = false, start= 200e3);
     parameter Modelica.SIunits.SpecificEnthalpy h_in_CO2_des(fixed = false);
     parameter Modelica.SIunits.SpecificEnthalpy h_out_CO2_des(fixed = false, start=1.2e6);
     parameter Modelica.SIunits.AbsolutePressure p_in_HTF_des(fixed = false, start=1e5);
     parameter Modelica.SIunits.AbsolutePressure p_out_HTF_des(fixed = false, start=1e5);
-    parameter Modelica.SIunits.AbsolutePressure p_in_CO2_des(fixed = false, start=24e6);
-    parameter Modelica.SIunits.AbsolutePressure p_out_CO2_des(fixed = false, start=24e6);
+    parameter Modelica.SIunits.AbsolutePressure p_in_CO2_des(fixed = false, start=25e6);
+    parameter Modelica.SIunits.AbsolutePressure p_out_CO2_des(fixed = false, start=25e6);
     
     Modelica.Fluid.Interfaces.FluidPort_a from_HTF_port_a(redeclare package Medium = MediumHTF) 
         annotation (Placement(visible = true,transformation(origin = {-69, 30}, extent = {{-7, -9}, {7, 9}}, rotation = 0),
@@ -51,7 +51,7 @@ parameter Boolean fixed_m_flow = true "True when"
     Medium.Temperature[N_q] T_from_CO2(start = {750 + (i - 1) / N_q * 150 for i in 1:N_q});
     MediumHTF.Temperature[N_q] T_from_HTF(start = {720+ (i - 1) / N_q * 150 for i in 1:N_q});
     
-    Modelica.SIunits.SpecificEnthalpy[N_q] h_from_HTF(start = {125421 + (i - 1) / N_q * 218669 for i in 1:N_q});
+    Modelica.SIunits.SpecificEnthalpy[N_q] h_from_HTF(start = {-96600.07 - (i - 1) / N_q *55088.93 for i in 1:N_q});
     
     Real[N_q] deltaT(start = {150 for i in 1:N_q});
     

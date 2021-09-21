@@ -136,7 +136,7 @@ deltaT[i] = if m_sup then stprops("T","H",h_HTF[i],"P",HTF_port_a.p,"R744")-stpr
 	//It is necessary to have one equation in a cycle that doesn't imply a circular equality on the mass flow rates
 	CO2_port_b.m_flow + CO2_port_a.m_flow = 0;
 
-	HTF_port_a.m_flow + HTF_port_b.m_flow = 0;
+	//HTF_port_a.m_flow + HTF_port_b.m_flow = 0;
 	//CO2_port_a.m_flow = if m_sup then HTF_port_a.m_flow else m_CO2_des * 0.8;
 
 	

@@ -1,7 +1,7 @@
 within sCO2_cycle;
 
-model CSP "High temperature salt-sCO2 system"
-  import SolarTherm.{Models,Media};
+model System_corrrelation
+import SolarTherm.{Models,Media};
   import Modelica.SIunits.Conversions.from_degC;
   import SI = Modelica.SIunits;
   import nSI = Modelica.SIunits.Conversions.NonSIunits;
@@ -10,6 +10,7 @@ model CSP "High temperature salt-sCO2 system"
   import FI = SolarTherm.Models.Analysis.Finances;
   import SolarTherm.Types.Solar_angles;
   import SolarTherm.Types.Currency;
+  import Modelica.Math.Vectors.interpolate;
   extends Modelica.Icons.Example;
   // Input Parameters
   // *********************
@@ -23,12 +24,12 @@ model CSP "High temperature salt-sCO2 system"
   // Weather data
   parameter String wea_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Weather/Libro2.motab");
   parameter Real wdelay[8] = {0, 0, 0, 0, 0, 0, 0, 0} "Weather file delays";
-  parameter nSI.Angle_deg lon = -72.46 "Longitude (+ve East)";
-  parameter nSI.Angle_deg lat = 11.69 "Latitude (+ve North)";
-  parameter nSI.Time_hour t_zone = -5 "Local time zone (UCT=0)";
+  parameter nSI.Angle_deg lon = -116 "Longitude (+ve East)";
+  parameter nSI.Angle_deg lat = 32 "Latitude (+ve North)";
+  parameter nSI.Time_hour t_zone = -8 "Local time zone (UCT=0)";
   parameter Integer year = 2015 "Meteorological year";
   // Field
-  parameter String opt_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Optics/gen3liq_salt_dagget.motab");
+  parameter String opt_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Optics/example_optics.motab");
   parameter Solar_angles angles = Solar_angles.dec_hra "Angles used in the lookup table file";
   parameter Real SM = 2.7 "Solar multiple";
   parameter Real land_mult = 6.281845377885782 "Land area multiplier";
@@ -47,7 +48,7 @@ model CSP "High temperature salt-sCO2 system"
   parameter Integer N_pa_rec = 16 "Number of panels in receiver";
   parameter SI.Thickness t_tb_rec = 1.2e-3 "Receiver tube wall thickness";
   parameter SI.Diameter D_tb_rec = 34.8e-3 "Receiver tube outer diameter";
-  parameter Real ar_rec = 4 / 7 "Height to diameter aspect ratio of receiver aperture";
+  parameter Real ar_rec = 21.6 / 17.65 "Height to diameter aspect ratio of receiver aperture";
   //Based on NREL Gen3 SAM model v14.02.2020
   parameter SI.Efficiency ab_rec = 0.98 "Receiver coating absorptance";
   parameter SI.Efficiency em_rec = 0.91 "Receiver coating emissivity";
@@ -114,7 +115,7 @@ model CSP "High temperature salt-sCO2 system"
   // This only works if const_dispatch=true. TODO for variable disptach Q_flow_defocus should be turned into an input variable to match the field production rate to the dispatch rate to the power block.
   parameter Real hot_tnk_empty_lb = 180 / H_storage "Hot tank empty trigger lower bound";
   // Level (below which) to stop disptach
-  parameter Real hot_tnk_empty_ub = 20 "Hot tank empty trigger upper bound";
+  parameter Real hot_tnk_empty_ub = 1 "Hot tank empty trigger upper bound";
   // Level (above which) to start disptach
   parameter Real hot_tnk_full_lb = 123 "Hot tank full trigger lower bound (L_df_off) Level to stop defocus";
   parameter Real hot_tnk_full_ub = 120 "Hot tank full trigger upper bound (L_df_on) Level of start defocus";
@@ -129,13 +130,13 @@ model CSP "High temperature salt-sCO2 system"
   parameter Real Ti = 0.1 "Time constant for integral component of receiver control";
   parameter Real Kp = -1000 "Gain of proportional component in receiver control";
   // Calculated Parameters
-  parameter SI.HeatFlowRate Q_rec_out = Q_flow_des * SM "Receiver thermal output at design point";
+  parameter SI.HeatFlowRate Q_rec_out = 50.4E6 "Receiver thermal output at design point";
   parameter SI.HeatFlowRate Q_flow_des = if fixed_field then if match_sam then R_des / ((1 + rec_fr) * SM) else R_des * (1 - rec_fr) / SM else P_gross / eff_blk "Heat to power block at design";
   parameter SI.Energy E_max = t_storage * 3600 * Q_flow_des "Maximum tank stored energy";
-  parameter SI.Area A_field = R_des / eff_opt / he_av_design / dni_des "Heliostat field reflective area";
-  parameter Integer n_heliostat = integer(ceil(A_field / A_heliostat)) "Number of heliostats";
-  parameter SI.Area A_receiver = A_field / C "Receiver aperture area";
-  parameter SI.Diameter D_receiver = sqrt(A_receiver / (CN.pi * ar_rec)) "Receiver diameter";
+  parameter SI.Area A_field = A_heliostat * n_heliostat "Heliostat field reflective area";
+  parameter Integer n_heliostat = heliostatsField.n_h "Number of heliostats";
+  parameter SI.Area A_receiver = D_receiver ^ 2 * (CN.pi * ar_rec) "Receiver aperture area";
+  parameter SI.Diameter D_receiver = receiver.D_rcv "Receiver diameter";
   parameter SI.Length H_receiver = D_receiver * ar_rec "Receiver height";
   parameter SI.Area A_land = land_mult * A_field + land_non_solar "Land area";
   parameter SI.SpecificEnthalpy h_cold_set = Medium.specificEnthalpy(state_cold_set) "Cold salt specific enthalpy at design";
@@ -145,7 +146,7 @@ model CSP "High temperature salt-sCO2 system"
   parameter SI.Mass m_max = E_max / (h_hot_set - h_cold_set) "Max salt mass in tanks";
   parameter SI.Volume V_max = m_max / ((rho_hot_set + rho_cold_set) / 2) "Max salt volume in tanks";
   //Based on NREL Gen3 SAM model v14.02.2020
-  parameter SI.MassFlowRate m_flow_fac = SM * Q_flow_des / (h_hot_set - h_cold_set) "Mass flow rate to receiver at design point";
+  parameter SI.MassFlowRate m_flow_fac = 197.5 "Mass flow rate to receiver at design point";
   parameter SI.MassFlowRate m_flow_rec_max = max_rec_op_fr * m_flow_fac "Maximum mass flow rate to receiver";
   parameter SI.MassFlowRate m_flow_rec_start = 0.81394780966 * m_flow_fac "Initial or guess value of mass flow rate to receiver in the feedback controller";
   parameter SI.MassFlowRate m_flow_blk = Q_flow_des / (h_hot_set - h_cold_set) "Mass flow rate to power block at design point";
@@ -157,18 +158,120 @@ model CSP "High temperature salt-sCO2 system"
   //Adjusted to obtain a height of 11 m for 12 hours of storage based on NREL Gen3 SAM model v14.02.2020
   parameter SI.Diameter D_storage = (0.5 * V_max / (H_storage - tank_min_l) * 4 / CN.pi) ^ 0.5 "Storage tank diameter";
   //Adjusted to obtain a diameter of 42.5m for 12 hours of storage based on NREL Gen3 SAM model v14.02.2020
-  parameter SI.Length H_tower = 0.154 * sqrt(twr_ht_const * (A_field / (gnd_cvge * excl_fac)) / CN.pi) "Tower height";
+  parameter SI.Length H_tower = receiver.H_tower "Tower height";
   // A_field/(gnd_cvge*excl_fac) is the field gross area
   parameter SI.Diameter D_tower = D_receiver "Tower diameter";
   // That's a fair estimate. An accurate H-to-D correlation may be used.
+  //PowerBlock Cost
+  //**************************************************************************************************************************************
+  // OVERNIGHT TURBOMAQUINARY COST
+  parameter Real UF = 1.18 "Money conversion factor (euro to dollar)";
+  parameter Integer which_PB_model = 1 "Choice of the Expensive PB model: 0 is for CEA power block, 1 is for NREL-SAM power block";
+  //parameter Real Powerblock_design[12](each fixed = false) if which_PB_model == 1 "array to store design point sizing result";
+  parameter SI.Efficiency eta1 = 0.89 "Design maximal compressor isentropic efficiency ";
+  parameter SI.Efficiency eta2 = 0.93 "Design turbine isentropic efficiency ";
+  parameter SI.Area A(fixed = false) "Heat transfer area of heat exchanger at design";
+  parameter SI.Temperature T_in_turb = from_degC(700) "Turbine inlet temperature (K) at design";
+  parameter SI.Temperature T_in_comp = from_degC(45) "Compressor inlet tempeature (K) at design";
+  parameter SI.Pressure P_in_turb = 25e3 "Turbine inlet pressure (kPa) at design";
+  parameter SI.Pressure P_in_comp = 25e3 / SPR_comp "Compressor inlet pressure (kPa) at design";
+  parameter SI.Temperature T_air_turb = from_degC(1273) "Turbine air equivalent temperature(K)";
+  parameter SI.Temperature T_air_comp = from_degC(298) "Compressor air equivalent temperature(K)";
+  parameter SI.Pressure P_air_turb = 20 * 101.325;
+  //"Turbine air equivalent pressure(kPa)"
+  parameter SI.Pressure P_air_comp = 101.325;
+  //"Compressor air equivalent pressure(kPa)"
+  parameter SI.Pressure P_op = p_blk "Power block operating pressure";
+  parameter Real ins_main_turbine = 4.1;
+  parameter Real ins_main_compressor = 4.8 "Indicative number of stages";
+  parameter SI.Efficiency SPR_turb = 3 "Turbine pressure ratio at design";
+  parameter SI.Efficiency SPR_comp = 3 "Compressor pressure at design";
+  parameter SI.MassFlowRate m_flow_turb = 77.8 "Turbine mass flow rate at design";
+  parameter SI.MassFlowRate m_flow_comp = 77.8 "Compressor mass flow rate at design";
+  parameter Real Cst = 1 "Costant for efects of variation of gamma and R";
+  parameter Real gamma_air = 1.4 "Heat capacity ratio of air (Cp/Cv)";
+  parameter Real gamma_CO2 = 1.289 "Heat capacity ratio of CO2";
+  parameter Real R_air = 0.2108 "Air gas constant (kJ/kg*K)";
+  parameter Real R_CO2 = 0.1889 "CO2 gas constant (kJ/kg*K)";
+  // OTHERS INVESTMENT COSTS
+  parameter Real TA = 0.09 "Porcentaje tubería y accesorios";
+  parameter Real IE = 0.2 "Porcentaje instalación equipos";
+  parameter Real IC = 0.05 "Porcentaje instalación y control";
+  parameter Real EME = 0.04 "Porcentaje equipos y materiales electricos";
+  parameter Real TECA = 0.05 "Porcentaje trabajo estructural civil y arquitectonico";
+  parameter Real INGSUP = 0.3 "Porcentaje ingeniería y supervisión";
+  parameter Real CCUC = 0.15 "Costo de construcción y utilidad del contratista";
+  parameter Real IMPR = 0.15 "Porcentaje imprevistos";
+  parameter Real ap = 0.15 "AFUDC percentage";
+  parameter Real TERR = 0 "Costo terreno";
+  parameter Real SDI = 0 "porcentaje servicio de instalación";
+  parameter Real TCRED = 0.05 "Cost of capital interest rate";
+  //Heat transfer area heat exchanger calculation
+  parameter SI.Diameter Dh = 1.5 "Heat exchanger hydraulic diameter";
+  parameter Real T_c = from_degC(131.763) "Design cold temperature - heat exchanger";
+  parameter Real T_h = from_degC(547.216) "Design hot temperature - heat exchanger";
+  parameter Real UA(unit = "kW/K") = 1.500 "Design conductance of the overall exchanger";
+  final constant Real pi = 2 * Modelica.Math.asin(1.0);
+  // 3.14159265358979
+  //For interpolation
+  parameter Real Tx[11] = {0, 50, 100, 150, 200, 300, 400, 500, 1000, 1500, 2000} "Temperature data vector for interpolation";
+  parameter Real miuy[11] = {0.00001375, 0.00001612, 0.00001841, 0.00002063, 0.00002276, 0.00002682, 0.00003061, 0.00003416, 0.00004898, 0.00006106, 0.00007322} "Dynamic viscosity data vector for interpolation";
+  parameter Real Pry[11] = {0.7661, 0.7520, 0.7464, 0.7445, 0.7442, 0.7450, 0.7458, 0.7460, 0.755, 0.7745, 0.8815} "Prandtl data vector for interpolation";
+  parameter Real Kty[11] = {0.01456, 0.01858, 0.02257, 0.02652, 0.03044, 0.038154, 0.04565, 0.05293, 0.08491, 0.10688, 0.11522} "Thermal conductivity data vector for interpolation";
+  parameter Real miu_c(fixed = false) "Cold dynamic viscosity";
+  parameter Real miu_h(fixed = false) "Hot dynamic viscosity";
+  parameter Real Pr_c(fixed = false) "Prandtl for cold stream";
+  parameter Real Pr_h(fixed = false) "Prandtl for hot stream";
+  parameter Real Kt_c(fixed = false) "Cold thermal conductivity";
+  parameter Real Kt_h(fixed = false) "Hot thermal conductivity";
+  // For U calculation
+  parameter SI.MassFlowRate m(fixed = false) "Heat exchanger mass flow rate";
+  parameter Real Re_c(fixed = false) "Reynolds for cold stream";
+  parameter Real Re_h(fixed = false) "Reynolds for hot stream";
+  parameter Real h_cold(fixed = false) "Cold convective heat transfer coefficient";
+  parameter Real h_hot(fixed = false) "Hot convective heat transfer coefficient";
+  parameter Real U(fixed = false) "Coeficiente total de transferencia";
+  //Calculated PowerBlock cost
+  // Calculos previos
+  parameter Real Nt = 927 / (1 - eta2) "Turbine efficiency factor";
+  parameter Real Nc = 39 / (1 - eta1) "Compressor efficiency factor";
+  parameter Real PR_equiv_comp = SPR_comp ^ ins_main_compressor;
+  // Pressure ratio main compressor
+  parameter Real PR_equiv_turb = SPR_turb ^ ins_main_turbine;
+  // Pressure ratio main turbine
+  // Initial calculations for equivalent mass
+  parameter Real P_turb = P_air_turb / P_in_turb;
+  // Razón de presiones, turbina (air/CO2)
+  parameter Real P_comp = P_air_comp / P_in_comp;
+  // Razón de presiones, compresor (air/CO2)
+  parameter Real gamma = gamma_air / gamma_CO2;
+  // Equivalent heat capacity ratio factor (air/CO2)
+  parameter Real R = R_CO2 / R_air;
+  // Razón de constantes de gas (CO2/air)
+  // Costo de los equipos
+  parameter SI.MassFlowRate m_equic = Cst * m_flow_comp * P_comp * sqrt(gamma * R * (T_in_comp / T_air_comp)) "Flujo másico equivalente compresor";
+  parameter SI.MassFlowRate m_equit = Cst * m_flow_turb * P_turb * sqrt(gamma * R * (1 / T_air_turb)) "Flujo másico equivalente turbina";
+  parameter FI.Money_USD cost_compressor = UF * Nc * m_equic * PR_equiv_comp * log(PR_equiv_comp) "Costo compresor principal";
+  parameter FI.Money_USD cost_turbine = UF * Nt * m_equit * PR_equiv_turb * log(PR_equiv_turb) * (1 + exp(0.036 * T_in_turb - 31.86)) "Costo turbina principal";
+  parameter FI.Money_USD cost_HTR = 3 * UF * 2111 * A ^ 0.69 * P_op ^ 0.28 "Costo recuperator";
+  parameter FI.Money_USD cost = cost_compressor + cost_turbine + cost_HTR "Costo del ciclo";
+  // Others investment costs (percentage of the total investment cost)
+  parameter FI.Money_USD TEC = cost "Costo total de los equipos";
+  parameter FI.Money_USD TONSC = TEC * (1 + IE + TA + IC + EME) "Total on-site cost";
+  parameter FI.Money_USD TOFSC = TEC * (TECA + SDI) + TERR "Total off-site cost";
+  parameter FI.Money_USD TDC = TONSC + TOFSC "Total direct cost";
+  parameter FI.Money_USD TIC = TEC * INGSUP + TDC * CCUC "Total indirect cost";
+  parameter FI.Money_USD TFCI = (TDC + TIC) * (1 + IMPR) "Total fixed capital investment";
+  parameter FI.Money_USD PFI = TFCI + TERR "Plant facilities investment";
+  //*********************************************************************************************************************************************
   // Cost data in USD (default) or AUD
-  parameter Real r_disc = 0.044 "Real discount rate";
+  parameter Real r_disc = 0.05 "Real discount rate";
   //Calculated to obtain a nominal discount rate of 0.0701, based on Downselect Criteria, Table 2
   parameter Real r_i = 0.025 "Inflation rate";
   //Based on Downselect Criteria, Table 2
   parameter Integer t_life(unit = "year") = 30 "Lifetime of plant";
   //Based on Downselect Criteria, Table 2
-  parameter Integer t_cons(unit = "year") = 0 "Years of construction";
+  //parameter Integer t_cons(unit = "year") = 0 "Years of construction";
   //Based on Downselect Criteria, Table 2 it should be 3, but for LCOE simple calculation is set to 0
   parameter Real r_cur = 0.71 "The currency rate from AUD to USD";
   // Valid for 2019. See https://www.rba.gov.au/
@@ -196,16 +299,16 @@ model CSP "High temperature salt-sCO2 system"
   // Calculated costs
   parameter FI.Money_USD C_piping = 18966200 "Piping cost (Riser/Downcomer) including insulation";
   //Based on Chad's last spreadsheet
-  parameter FI.Money_USD C_pumps = 4648000 "Cold Salt pumps";
+  //parameter FI.Money_USD C_pumps = 4648000 "Cold Salt pumps";
   //Based on Chad's last spreadsheet
   parameter FI.Money_USD C_field = pri_field * A_field "Field cost";
   parameter FI.Money_USD C_site = pri_site * A_field "Site improvements cost";
   parameter FI.Money_USD C_tower(fixed = false) "Tower cost";
   parameter FI.Money_USD C_receiver = if currency == Currency.USD then C_receiver_ref * (A_receiver / A_receiver_ref) ^ 0.7 else C_receiver_ref * (A_receiver / A_receiver_ref) ^ 0.7 / r_cur "Receiver cost";
   parameter FI.Money_USD C_storage = pri_storage * E_max "Storage cost";
-  parameter FI.Money_USD C_block = pri_block * P_gross "Power block cost";
+  //parameter FI.Money_USD C_block = pri_block * P_gross "Power block cost";
   parameter FI.Money_USD C_bop = pri_bop * P_gross "Balance of plant cost";
-  parameter FI.Money_USD C_cap_dir_sub = (1 - f_Subs) * (C_field + C_site + C_tower + C_receiver + C_storage + C_block + C_bop + C_piping + C_pumps) "Direct capital cost subtotal";
+  parameter FI.Money_USD C_cap_dir_sub = (1 - f_Subs) * (C_field + C_site + C_tower + C_receiver + C_storage / 2 + TFCI + C_bop + C_piping) "Direct capital cost subtotal";
   // i.e. purchased equipment costs
   parameter FI.Money_USD C_contingency = 0.1 * C_cap_dir_sub "Contingency costs";
   //Based on Downselect Criteria, Table 2
@@ -216,6 +319,7 @@ model CSP "High temperature salt-sCO2 system"
   parameter FI.Money_USD C_cap = C_cap_dir_tot + C_EPC + C_land "Total capital (installed) cost";
   parameter FI.MoneyPerYear C_year = pri_om_name * P_name "Fixed O&M cost per year";
   parameter Real C_prod(unit = "$/J/year") = pri_om_prod "Variable O&M cost per production per year";
+  parameter Real CRF = r_disc * (1 + r_disc) ^ t_life / ((1 + r_disc) ^ t_life - 1) "Capital recovery factor";
   // System components
   // *********************
   //Weather data
@@ -223,27 +327,27 @@ model CSP "High temperature salt-sCO2 system"
     Placement(visible = true, transformation(extent = {{-132, -56}, {-102, -28}}, rotation = 0)));
   //DNI_input
   Modelica.Blocks.Sources.RealExpression DNI_input(y = data.DNI) annotation(
-    Placement(visible = true, transformation(extent = {{-138, 88}, {-118, 108}}, rotation = 0)));
+    Placement(transformation(extent = {{-140, 60}, {-120, 80}})));
   //Tamb_input
+  Modelica.Blocks.Sources.RealExpression Tamb_input(y = data.Tdry) annotation(
+    Placement(visible = true, transformation(extent = {{154, 72}, {134, 92}}, rotation = 0)));
   //WindSpeed_input
   Modelica.Blocks.Sources.RealExpression Wspd_input(y = data.Wspd) annotation(
-    Placement(visible = true, transformation(extent = {{-146, 44}, {-120, 64}}, rotation = 0)));
+    Placement(transformation(extent = {{-140, 20}, {-114, 40}})));
   //pressure_input
+  Modelica.Blocks.Sources.RealExpression Pres_input(y = data.Pres) annotation(
+    Placement(visible = true, transformation(extent = {{156, -106}, {136, -86}}, rotation = 0)));
   //parasitic inputs
   // Or block for defocusing
   //Sun
   SolarTherm.Models.Sources.SolarModel.Sun sun(lon = data.lon, lat = data.lat, t_zone = data.t_zone, year = data.year, redeclare function solarPosition = Models.Sources.SolarFunctions.PSA_Algorithm) annotation(
-    Placement(transformation(extent = {{-82, 60}, {-62, 80}})));
+    Placement(visible = true, transformation(extent = {{-80, 62}, {-60, 82}}, rotation = 0)));
   // Solar field
-  SolarTherm.Models.CSP.CRS.HeliostatsField.HeliostatsFieldSAM heliostatsField(redeclare model Optical = Models.CSP.CRS.HeliostatsField.Optical.Table(angles = angles, file = opt_file), A_h = A_heliostat, Wspd_max = Wspd_max, ele_min(displayUnit = "deg") = ele_min, he_av = he_av_design, lat = data.lat, lon = data.lon, n_h = 8700, nu_defocus = nu_defocus, nu_min = nu_min_sf, nu_start = nu_start, use_defocus = false, use_on = true, use_wind = true) annotation(
-    Placement(transformation(extent = {{-88, 2}, {-56, 36}})));
+  SolarTherm.Models.CSP.CRS.HeliostatsField.HeliostatsFieldSAM heliostatsField(redeclare model Optical = Models.CSP.CRS.HeliostatsField.Optical.Table(angles = angles, file = opt_file), A_h = A_heliostat, Q_design = Q_rec_out, Wspd_max = Wspd_max, ele_min(displayUnit = "deg") = ele_min, he_av = he_av_design, lat = data.lat, lon = data.lon, n_h = 1800, nu_defocus = nu_defocus, nu_min = nu_min_sf, nu_start = nu_start, use_defocus = false, use_on = true, use_wind = use_wind) annotation(
+    Placement(visible = true, transformation(extent = {{-86, 2}, {-54, 36}}, rotation = 0)));
   // Receiver
-  SolarTherm.Models.CSP.CRS.Receivers.ChlorideSaltReceiver receiver(redeclare package Medium = Medium, em = em_rec, H_rcv = H_receiver, D_rcv = D_receiver, N_pa = N_pa_rec, t_tb = t_tb_rec, D_tb = D_tb_rec, ab = ab_rec, m_flow_rec_des = m_flow_fac, const_alpha = true) annotation(
-    Placement(transformation(extent = {{-46, 4}, {-10, 40}})));
-  Modelica.Fluid.Sources.Boundary_pT boundary1(redeclare package Medium = Medium, T = 468 + 273.15, nPorts = 1, p = 1e5, use_T_in = false, use_p_in = false) annotation(
-    Placement(visible = true, transformation(origin = {67, -10}, extent = {{5, -8}, {-5, 8}}, rotation = 0)));
-  Modelica.Fluid.Sources.MassFlowSource_h sinkHot(redeclare package Medium = Medium, m_flow = -745, nPorts = 1, use_m_flow_in = false) annotation(
-    Placement(visible = true, transformation(origin = {66, 34}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
+  SolarTherm.Models.CSP.CRS.Receivers.ChlorideSaltReceiver receiver(redeclare package Medium = Medium, D_rcv = 7.6, D_tb = D_tb_rec, H_rcv = 9.301, N_pa = 16, ab = ab_rec, const_alpha = true, em = em_rec, m_flow_rec_des = 197.8, t_tb = t_tb_rec) annotation(
+    Placement(visible = true, transformation(extent = {{-42, 4}, {-6, 40}}, rotation = 0)));
   // Hot tank
   // Pump hot
   // Cold tank
@@ -255,14 +359,38 @@ model CSP "High temperature salt-sCO2 system"
   // TODO Needs to be configured in instantiation if not const_dispatch. See SimpleResistiveStorage model
   SolarTherm.Models.Sources.Schedule.Scheduler sch if not const_dispatch;
   // Variables:
-  //SI.Power P_elec "Output power of power block";
-  //SI.Energy E_elec(start = 0, fixed = true, displayUnit = "MW.h") "Generate electricity";
-  //FI.Money R_spot(start = 0, fixed = true) "Spot market revenue";
-  Modelica.Blocks.Sources.RealExpression Tamb_input(y = data.Tdry) annotation(
-    Placement(visible = true, transformation(extent = {{140, 70}, {120, 90}}, rotation = 0)));
-  Modelica.Blocks.Sources.RealExpression Pres_input(y = data.Pres) annotation(
-    Placement(visible = true, transformation(origin = {94, 66}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  SI.Power P_elec "Output power of power block";
+  SI.Energy E_elec(start = 0, fixed = true, displayUnit = "MW.h") "Generate electricity";
+  FI.Money R_spot(start = 0, fixed = true) "Spot market revenue";
+  Modelica.Blocks.Sources.Constant const1(k = 0) annotation(
+    Placement(visible = true, transformation(origin = {76, 122}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Constant const2(k = 1.2) annotation(
+    Placement(visible = true, transformation(origin = {28, 56}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Constant const3(k = 1e5) annotation(
+    Placement(visible = true, transformation(origin = {-6, -56}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  SolarTherm.Models.PowerBlocks.sCO2CycleNREL sCO2CycleNREL(redeclare package Medium = Medium, E_gross(displayUnit = "J"), E_net(displayUnit = "J"), enable_losses = true) annotation(
+    Placement(visible = true, transformation(origin = {106, 25}, extent = {{-20, -21}, {20, 21}}, rotation = 0)));
+  sCO2_cycle.Cold_tank cold_tank annotation(
+    Placement(visible = true, transformation(origin = {52, -28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  SolarTherm.Models.Analysis.Market market(redeclare model Price = SolarTherm.Models.Analysis.EnergyPrice.Constant) annotation(
+    Placement(visible = true, transformation(origin = {138, 24}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
 initial equation
+//Heat transfer area - Heat exchanger
+  miu_c = interpolate(Tx, miuy, T_c) "Cold dynamic viscosity";
+  miu_h = interpolate(Tx, miuy, T_h) "Hot dynamic viscosity";
+  Pr_c = interpolate(Tx, Pry, T_c) "Prandtl for cold stream";
+  Pr_h = interpolate(Tx, Pry, T_h) "Prandtl for hot stream";
+  Kt_c = interpolate(Tx, Kty, T_c) "Thermal conductivity cold stream";
+  Kt_h = interpolate(Tx, Kty, T_h) "Thermal conductivity hot stream";
+// Calculate U
+  m = 77.8 "Heat exchanger mass flow rate";
+  Re_c = 4 * m / Dh * miu_c * pi "Reynolds for cold stream";
+  Re_h = 4 * m / Dh * miu_h * pi "Reynolds for hot stream";
+  h_cold = 0.78 * Re_c ^ 0.5 * Pr_c ^ (1 / 3) * Kt_c / Dh "Cold convective heat transfer coefficient";
+  h_hot = 0.78 * Re_h ^ 0.5 * Pr_h ^ (1 / 3) * Kt_h / Dh "Hot convective heat transfer coefficient";
+  U = (h_hot + h_cold) / (h_hot * h_cold) "Coeficiente total de transferencia";
+//Heat transfer Area
+  A = UA / U "Heat exchanger transfer area";
   if fixed_field then
     P_gross = Q_flow_des * eff_cyc;
   else
@@ -280,38 +408,53 @@ initial equation
 equation
 //Connections from data
   connect(DNI_input.y, sun.dni) annotation(
-    Line(points = {{-117, 98}, {-102, 98}, {-102, 69.8}, {-82.6, 69.8}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
+    Line(points = {{-119, 70}, {-98, 70}, {-98, 72}, {-81, 72}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
   connect(Wspd_input.y, heliostatsField.Wspd) annotation(
-    Line(points = {{-119, 54}, {-100, 54}, {-100, 29.54}, {-87.68, 29.54}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
-// Fluid connections
+    Line(points = {{-112.7, 30}, {-86, 30}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
 // controlCold connections
 // controlHot connections
 //Solar field connections i.e. solar.heat port and control
   connect(sun.solar, heliostatsField.solar) annotation(
-    Line(points = {{-72, 60}, {-72, 36}}, color = {255, 128, 0}));
+    Line(points = {{-70, 62}, {-70, 36}}, color = {255, 128, 0}));
   connect(heliostatsField.heat, receiver.heat) annotation(
-    Line(points = {{-55.68, 27.5}, {-54.82, 27.5}, {-54.82, 27.4}, {-46, 27.4}}, color = {191, 0, 0}));
-//PowerBlock connections
+    Line(points = {{-54, 27.5}, {-54.82, 27.5}, {-54.82, 27}, {-42, 27}}, color = {191, 0, 0}));
   connect(heliostatsField.on, receiver.on) annotation(
-    Line(points = {{-82, 2}, {-82, -20}, {-44, -20}, {-44, 5}, {-39, 5}}, color = {255, 0, 255}));
-// P_elec = powerBlock.W_net;
-//E_elec = powerBlock.E_net;
-// R_spot = market.profit;
-  connect(Tamb_input.y, receiver.Tamb) annotation(
-    Line(points = {{120, 80}, {-28, 80}, {-28, 36}, {-28, 36}}, color = {0, 0, 127}));
-  connect(receiver.fluid_a, boundary1.ports[1]) annotation(
-    Line(points = {{-24, 6}, {50, 6}, {50, -10}, {62, -10}, {62, -10}}, color = {0, 127, 255}));
-  connect(sinkHot.ports[1], receiver.fluid_b) annotation(
-    Line(points = {{56, 34}, {2, 34}, {2, 32}, {-22, 32}, {-22, 30}}, color = {0, 127, 255}));
-protected
+    Line(points = {{-70, 2}, {-70, -20}, {-44, -20}, {-44, 5}, {-27, 5}}, color = {255, 0, 255}));
+  connect(receiver.Tamb, Tamb_input.y) annotation(
+    Line(points = {{-24, 36}, {-24, 82}, {133, 82}}, color = {0, 0, 127}));
+//PowerBlock connections
+  connect(const1.y, sCO2CycleNREL.parasities) annotation(
+    Line(points = {{87, 122}, {110, 122}, {110, 38}}, color = {0, 0, 127}));
+  connect(sCO2CycleNREL.T_amb, Tamb_input.y) annotation(
+    Line(points = {{102, 38}, {102, 82}, {134, 82}}, color = {0, 0, 127}));
+// Fluid connections
+  connect(const3.y, cold_tank.p_in) annotation(
+    Line(points = {{6, -56}, {30, -56}, {30, -8}, {50, -8}, {50, -20}}, color = {0, 0, 127}));
+  connect(sCO2CycleNREL.fluid_a, receiver.fluid_b) annotation(
+    Line(points = {{98, 32}, {-18, 32}, {-18, 30}}, color = {0, 127, 255}));
+  connect(sCO2CycleNREL.W_net, market.W_net) annotation(
+    Line(points = {{116, 24}, {128, 24}}, color = {0, 0, 127}));
+  P_elec = sCO2CycleNREL.W_net;
+  E_elec = sCO2CycleNREL.E_net;
+  R_spot = market.profit;
+  connect(cold_tank.fluid_a, sCO2CycleNREL.fluid_b) annotation(
+    Line(points = {{62, -34}, {82, -34}, {82, 16}, {94, 16}, {94, 16}}, color = {0, 127, 255}));
+  connect(cold_tank.fluid_b, receiver.fluid_a) annotation(
+    Line(points = {{42, -34}, {6, -34}, {6, 8}, {-20, 8}, {-20, 6}}, color = {0, 127, 255}));
   annotation(
-    Diagram(coordinateSystem(extent = {{-140, -120}, {160, 140}}, initialScale = 0.1), graphics = {Text(lineColor = {217, 67, 180}, extent = {{4, 92}, {40, 90}}, textString = "defocus strategy", fontSize = 9), Text(lineColor = {217, 67, 180}, extent = {{-50, -40}, {-14, -40}}, textString = "on/off strategy", fontSize = 9), Text(origin = {2, 2}, extent = {{-52, 8}, {-4, -12}}, textString = "Receiver", fontSize = 6, fontName = "CMU Serif"), Text(origin = {12, 4}, extent = {{-110, 4}, {-62, -16}}, textString = "Heliostats Field", fontSize = 6, fontName = "CMU Serif"), Text(origin = {4, -8}, extent = {{-80, 86}, {-32, 66}}, textString = "Sun", fontSize = 6, fontName = "CMU Serif"), Text(origin = {-4, 2}, extent = {{0, 58}, {48, 38}}, textString = "Hot Tank", fontSize = 6, fontName = "CMU Serif"), Text(extent = {{30, -24}, {78, -44}}, textString = "Cold Tank", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 4}, extent = {{-6, 20}, {42, 0}}, textString = "Receiver Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 32}, extent = {{30, 62}, {78, 42}}, textString = "Power Block Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {8, -26}, extent = {{-146, -26}, {-98, -46}}, textString = "Data Source", fontSize = 7, fontName = "CMU Serif")}),
+    Diagram(coordinateSystem(extent = {{-140, -120}, {160, 140}}, initialScale = 0.1), graphics = {Text(lineColor = {217, 67, 180}, extent = {{-50, -40}, {-14, -40}}, textString = "on/off strategy", fontSize = 9), Text(origin = {2, 2}, extent = {{-52, 8}, {-4, -12}}, textString = "Receiver", fontSize = 6, fontName = "CMU Serif"), Text(origin = {12, 4}, extent = {{-110, 4}, {-62, -16}}, textString = "Heliostats Field", fontSize = 6, fontName = "CMU Serif"), Text(origin = {-8, -20}, extent = {{-80, 86}, {-32, 66}}, textString = "Sun", fontSize = 6, fontName = "CMU Serif"), Text(origin = {20, 12}, extent = {{30, -24}, {78, -44}}, textString = "Cold Tank", fontSize = 6, fontName = "CMU Serif"), Text(origin = {6, -2}, extent = {{80, 12}, {128, -8}}, textString = "Power Block", fontSize = 6, fontName = "CMU Serif"), Text(origin = {6, 0}, extent = {{112, 16}, {160, -4}}, textString = "Market", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 4}, extent = {{-6, 20}, {42, 0}}, textString = "Receiver Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 32}, extent = {{30, 62}, {78, 42}}, textString = "Power Block Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {8, -26}, extent = {{-146, -26}, {-98, -46}}, textString = "Data Source", fontSize = 7, fontName = "CMU Serif")}),
     Icon(coordinateSystem(extent = {{-140, -120}, {160, 140}})),
-    experiment(StopTime = 3.5e10, StartTime = 0, Tolerance = 0.0001, Interval = 35000),
+    experiment(StopTime = 3.1536e+07, StartTime = 0, Tolerance = 0.0001, Interval = 1800),
     __Dymola_experimentSetupOutput,
     Documentation(revisions = "<html>
+
 	<ul>
-	<li> A. Shirazi and A. Fontalvo Lascano (June 2019) :<br>Released first version. </li>
+
+	<li> D.Martinez y J.Negrete (Septiembre 2021) :<br>Segunda Versión. </li>
+
 	</ul>
+
 	</html>"));
-end CSP;
+
+
+end System_corrrelation;

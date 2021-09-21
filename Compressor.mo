@@ -22,7 +22,7 @@ model Compressor "zero dimmensional compressor model"
 	parameter SI.SpecificEnthalpy h_out_isen_des(fixed = false) "Outlet isentropic enthalpy of the compressor";
 
 	parameter SI.Pressure p_in_des = p_out_des/PR "Compressor inlet pressure at design";
-	parameter SI.Temperature T_in_des = from_degC(40) "Compressor inlet temperature at design";
+	parameter SI.Temperature T_in_des = from_degC(45) "Compressor inlet temperature at design";
 	parameter SI.SpecificEnthalpy h_in_des(fixed = false) "Inlet enthalpy of the compressor";
 	parameter SI.SpecificEntropy s_in_des(fixed = false) "Inlet entropy at design";
 	parameter SI.Density rho_in_des(fixed = false) "Inlet Density at design";
@@ -39,6 +39,20 @@ model Compressor "zero dimmensional compressor model"
 	SI.SpecificEntropy s_in(start = s_in_des) "Compressor inlet entropy";
 	SI.Density rho_in(start = rho_in_des) "Compressor inlet density";
 	SI.Temperature T_in;
+	SI.Temperature T_out;
+	SI.SpecificEntropy s_out(start = s_in_des) "Compressor inlet entropy";
+	
+	//VARAIBLES AMBIENTALES 
+	parameter SI.Temperature T_amb=from_degC(25);
+	parameter SI.Pressure p_amb=1e5;
+	parameter SI.SpecificEnthalpy h_o(fixed=false);
+	parameter SI.SpecificEntropy s_o(fixed=false);
+	
+	// VARIABLES DE EXERGIA 
+	Real b1;
+	Real b2;
+	Real XX_comp;
+	Real Dyre;
 	Modelica.Fluid.Interfaces.FluidPort_a port_a(redeclare package Medium = Medium) annotation(
 		Placement(visible = true, transformation(origin = {-60, -40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-60, -40}, extent = {{-6, -6}, {6, 6}}, rotation = 0)));
 
@@ -51,10 +65,12 @@ initial algorithm
 	h_out_isen_des := stprops("H","P",p_out_des,"S",s_in_des,fluid);
 	h_out_des := h_in_des + (h_out_isen_des - h_in_des)/eta_design;
 	rho_in_des := stprops("D","T",T_in_des,"P",p_in_des,fluid);
-	W_comp_des := m_flow_des*(h_in_des - h_out_des);
+	W_comp_des := m_flow_des*(-h_in_des +h_out_des);
 	D_rotor := (2*m_flow_des/(phi_des*rho_in_des*n_shaft))^(1/3);
 	v_tip_des := 0.5*D_rotor*n_shaft;
 	psi_des := (h_out_isen_des - h_in_des)/v_tip_des^2;
+	h_o:= stprops("H","T",T_amb,"P",p_amb,fluid);
+	s_o := stprops("S","T",T_amb,"P",p_amb,fluid);
 
 equation
 	//Mass balance
@@ -71,16 +87,24 @@ equation
 	p_out = stprops("P","H",h_out_isen,"S",s_in,fluid);
 	h_out = h_in + (h_out_isen - h_in)/eta_comp;
 	port_b.h_outflow = h_out;
-T_in=stprops("T","P",p_in,"H",h_in,fluid);
+    T_in=stprops("T","P",p_in,"H",h_in,fluid);
+    T_out=stprops("T","P",p_out,"H",h_out,fluid);
+    s_out= stprops("S","T",T_out,"P",p_out,fluid);
 	//Dimmensionless mass flow rate and head
 	phi = port_a.m_flow / (rho_in * v_tip_des * D_rotor ^ 2);
 	psi = (0.04049 + 54.7*phi - 2505*phi^2 + 53224*phi^3 - 498626*phi^4) * psi_des / 0.46181921979961293;
 	eta_comp = (-0.7069 + 168.6*phi - 8089*phi^2 + 182725*phi^3 - 1.638e6*phi^4) * eta_design / 0.677837;
 	h_out_isen = h_in + psi * v_tip_des ^ 2;
 	W_comp = port_a.m_flow * (h_out - h_in);
+	Dyre=87.9092 * (h_out - h_in);
 
 	//Should not have reverse flow
 	port_a.h_outflow = 0.0;
+	
+	//EXERGIA 
+	 b1 = (h_in-h_o) - (T_amb*(s_in-s_o));
+     b2 = (h_out-h_o) - (T_amb*(s_out-s_o));
+     XX_comp=((h_out - h_in)-(b2-b1));
 	
 annotation(
 	Diagram(graphics = {Text(origin = {-8, 16}, extent = {{-28, 16}, {42, -46}}, textString = "Compressor"), Polygon(origin = {-2, 10}, rotation = 180, points = {{-42, 40}, {-42, -20}, {38, -50}, {38, 70}, {-42, 40}, {-42, 40}}), Line(origin = {50, 20}, points = {{-10, 0}, {10, 0}, {10, 0}}), Line(origin = {-50, -40.1649}, points = {{10, 0}, {-10, 0}, {-10, 0}})}, coordinateSystem(initialScale = 0.1)),

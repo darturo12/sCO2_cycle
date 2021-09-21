@@ -1,6 +1,6 @@
 within sCO2_cycle;
 
-model POWER2
+model simple_hx_drycool
   import SolarTherm.{Models,Media};
   import Modelica.SIunits.Conversions.from_degC;
   import SI = Modelica.SIunits;
@@ -14,6 +14,7 @@ model POWER2
   replaceable package MediumCold = sCO2_cycle.CarbonDioxide;
   replaceable package MediumCold_air = sCO2_cycle.AIR;
   // extends Modelica.Icons.Example;
+  parameter String wea_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Weather/Libro2.motab");
   replaceable package MedPB = SolarTherm.Media.CarbonDioxide;
   replaceable package MedRec = SolarTherm.Media.ChlorideSaltPH.ChlorideSaltPH_ph;
   parameter String file_weather = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Weather/example_TMY3.motab");
@@ -53,12 +54,14 @@ model POWER2
   parameter Integer N_exch = 5;
   // Boolean m_sup "Disconnect the production of electricity when the outlet pressure of the turbine is close to the critical pressure";
   //Components instanciation
+  sCO2_cycle.Exchanger_two exchanger(redeclare package MedRec = MedRec, N_exch = 20, P_nom_des = 1e8, T_out_CO2_des = T_high, h_in_CO2_des = 1.2e6, h_in_HTF_des = 400e3, m_CO2_des = 77.4, m_HTF_des = 692.7, p_in_CO2_des = 2.5e+7, p_in_HTF_des = 100000, p_out_CO2_des = 2.5e+7, ratio_m_des = 1) annotation(
+    Placement(visible = true, transformation(origin = {12, 54}, extent = {{-22, 22}, {22, -22}}, rotation = 0)));
   parameter MedRec.ThermodynamicState state_HTF_in_des = MedRec.setState_pTX(1e5, T_HTF_in_des);
-  sCO2_cycle.Turbine Turbi(PR = 3.071253071, m_flow_des = 77.41, n_shaft = 3479.209) annotation(
+  sCO2_cycle.Turbine Turbi(PR = 3, m_flow_des = 77.41, n_shaft = 3479.209) annotation(
     Placement(visible = true, transformation(origin = {72, -14}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
-  sCO2_cycle.HTR_HX Rec(N_q = 10, pinchRecuperator = 5) annotation(
+  sCO2_cycle.HTR_HX Rec(N_q = 25, pinchRecuperator = 1.2) annotation(
     Placement(visible = true, transformation(origin = {15, -49}, extent = {{-17, -17}, {17, 17}}, rotation = 0)));
-  sCO2_cycle.Compressor compressor(PR = 3.071253071, m_flow_des = 77.40, n_shaft = 3479.209, p_out_des = 2.5e+7) annotation(
+  sCO2_cycle.Compressor compressor(PR = 3, m_flow_des = 77.40, n_shaft = 3479.209, p_out_des = 2.5e+7) annotation(
     Placement(visible = true, transformation(origin = {-82, 10}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
   sCO2_cycle.COOLER2 cooler2(dT_approach = 15, fixed_m_flow = false) annotation(
     Placement(visible = true, transformation(origin = {-33, -71}, extent = {{-19, -19}, {19, 19}}, rotation = 0)));
@@ -66,18 +69,10 @@ model POWER2
     Placement(visible = true, transformation(origin = {30, -80}, extent = {{6, -8}, {-6, 8}}, rotation = 0)));
   Modelica.Fluid.Sources.Boundary_pT boundary1(redeclare package Medium = MediumCold_air, T = 30 + 273.15, nPorts = 1, p = 1e5, use_T_in = false, use_p_in = false) annotation(
     Placement(visible = true, transformation(origin = {-73, -80}, extent = {{-5, -8}, {5, 8}}, rotation = 0)));
-  Modelica.Blocks.Sources.RealExpression Tamb_input(y = data.Tdry) annotation(
-    Placement(visible = true, transformation(origin = {-82, -36}, extent = {{10, -10}, {-10, 10}}, rotation = 180)));
-  SolarTherm.Models.Sources.DataTable.DataTable data(file = file_weather, t_zone = 9.5) annotation(
-    Placement(visible = true, transformation(extent = {{-100, 44}, {-70, 72}}, rotation = 0)));
-  Modelica.Blocks.Sources.RealExpression Pres_input(y = data.Pres) annotation(
-    Placement(visible = true, transformation(origin = {-82, -18}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Fluid.Interfaces.FluidPort_a port_in(redeclare package Medium = MediumHTF) annotation(
-    Placement(visible = true, transformation(origin = {82, 42}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-24, 44}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Fluid.Interfaces.FluidPort_b port_out(redeclare package Medium = MediumHTF) annotation(
-    Placement(visible = true, transformation(origin = {-50, 44}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-26, -54}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  sCO2_cycle.ExchangerDISC exchangerDISC(A = 1, U = 640000) annotation(
-    Placement(visible = true, transformation(origin = {18, 24}, extent = {{-24, -24}, {24, 24}}, rotation = 0)));
+  Modelica.Fluid.Sources.MassFlowSource_h sinkHot(redeclare package Medium = MediumHTF, m_flow = -692.7, nPorts = 1, use_m_flow_in = false) annotation(
+    Placement(visible = true, transformation(origin = {-70, 78}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Fluid.Sources.Boundary_pT boundary_pT(redeclare package Medium = MediumHTF, T = 500 + 273.15, nPorts = 1, p = 1e5, use_T_in = false, use_p_in = false) annotation(
+    Placement(visible = true, transformation(origin = {77, 88}, extent = {{-5, -8}, {5, 8}}, rotation = 180)));
 initial equation
 //exchanger.h_out_CO2_des=1.2e6;
 //HTR.h_in_turb_des = turbine.h_out_des;
@@ -121,13 +116,17 @@ initial equation
 //reCompressor.m_des=gamma*LTR.m_turb_des;
 // Financial Analysis
 equation
-  eta_cycle = W_net / 1;
+  eta_cycle = W_net / exchanger.Q_HX;
   der(E_net) = W_net;
   W_net = Turbi.W_turb - compressor.W_comp;
+  connect(Rec.from_comp_port_b, exchanger.port_c_in) annotation(
+    Line(points = {{28, -44}, {38, -44}, {38, 22}, {-32, 22}, {-32, 62}, {-4, 62}, {-4, 62}}));
   connect(compressor.port_b, Rec.from_comp_port_a) annotation(
     Line(points = {{-70, 14}, {-64, 14}, {-64, -44}, {4, -44}, {4, -44}}, color = {0, 127, 255}));
   connect(Rec.from_turb_port_a, Turbi.port_b) annotation(
     Line(points = {{28, -54}, {84, -54}, {84, -22}}, color = {0, 127, 255}));
+  connect(Turbi.port_a, exchanger.port_c_out) annotation(
+    Line(points = {{60, -10}, {56, -10}, {56, 62}, {26, 62}}, color = {0, 127, 255}));
   connect(cooler2.port_a_in, Rec.from_turb_port_b) annotation(
     Line(points = {{-14, -61}, {-6, -61}, {-6, -54}, {2, -54}}, color = {0, 127, 255}));
   connect(cooler2.port_a_out, compressor.port_a) annotation(
@@ -136,18 +135,14 @@ equation
     Line(points = {{-68, -80}, {-52, -80}, {-52, -80}, {-52, -80}}, color = {0, 127, 255}));
   connect(sinkCold.ports[1], cooler2.port_b_out) annotation(
     Line(points = {{24, -80}, {-14, -80}, {-14, -80}, {-14, -80}}, color = {0, 127, 255}));
-  connect(exchangerDISC.port_b_out, Turbi.port_a) annotation(
-    Line(points = {{42, 12}, {60, 12}, {60, -10}, {60, -10}}, color = {0, 127, 255}));
-  connect(Rec.from_comp_port_b, exchangerDISC.port_b_in) annotation(
-    Line(points = {{28, -44}, {32, -44}, {32, -20}, {-20, -20}, {-20, 10}, {-6, 10}, {-6, 12}}));
-  connect(port_out, exchangerDISC.port_a_out) annotation(
-    Line(points = {{-50, 44}, {-50, 44}, {-50, 36}, {-6, 36}, {-6, 36}}));
-  connect(exchangerDISC.port_a_in, port_in) annotation(
-    Line(points = {{42, 36}, {82, 36}, {82, 42}, {82, 42}}));
+  connect(sinkHot.ports[1], exchanger.port_h_out) annotation(
+    Line(points = {{-60, 78}, {-16, 78}, {-16, 46}, {-4, 46}}, color = {0, 127, 255}));
+  connect(exchanger.port_h_in, boundary_pT.ports[1]) annotation(
+    Line(points = {{28, 46}, {48, 46}, {48, 74}, {68, 74}, {68, 88}, {72, 88}}, color = {0, 127, 255}));
   annotation(
-    uses(Modelica(version = "3.2.3")),
-    Icon(graphics = {Rectangle(origin = {4, -7}, extent = {{-32, 89}, {32, -89}})}, coordinateSystem(initialScale = 1)),
     experiment(StartTime = 0, StopTime = 1, Tolerance = 0.001, Interval = 0.02),
     __OpenModelica_simulationFlags(lv = "LOG_STATS", outputFormat = "mat", s = "dassl"),
-    Diagram(coordinateSystem(initialScale = 1)));
-end POWER2;
+    Diagram(coordinateSystem(initialScale = 1)),
+    Icon(coordinateSystem(initialScale = 1), graphics = {Rectangle(origin = {4, -7}, extent = {{-32, 89}, {32, -89}})}),
+    __OpenModelica_commandLineOptions = "--matchingAlgorithm=PFPlusExt --indexReductionMethod=dynamicStateSelection -d=initialization,NLSanalyticJacobian");
+end simple_hx_drycool;

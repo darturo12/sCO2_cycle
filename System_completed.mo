@@ -1,7 +1,7 @@
 within sCO2_cycle;
 
-model CSP "High temperature salt-sCO2 system"
-  import SolarTherm.{Models,Media};
+model System_completed
+ import SolarTherm.{Models,Media};
   import Modelica.SIunits.Conversions.from_degC;
   import SI = Modelica.SIunits;
   import nSI = Modelica.SIunits.Conversions.NonSIunits;
@@ -21,14 +21,14 @@ model CSP "High temperature salt-sCO2 system"
   parameter Boolean const_dispatch = true "Constant dispatch of energy";
   parameter String sch_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Schedules/daily_sch_0.motab") if not const_dispatch "Discharging schedule from a file";
   // Weather data
-  parameter String wea_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Weather/Libro2.motab");
+  parameter String wea_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Weather/TESIS.motab");
   parameter Real wdelay[8] = {0, 0, 0, 0, 0, 0, 0, 0} "Weather file delays";
-  parameter nSI.Angle_deg lon = -72.46 "Longitude (+ve East)";
-  parameter nSI.Angle_deg lat = 11.69 "Latitude (+ve North)";
-  parameter nSI.Time_hour t_zone = -5 "Local time zone (UCT=0)";
+  parameter nSI.Angle_deg lon = -116 "Longitude (+ve East)";
+  parameter nSI.Angle_deg lat = 32 "Latitude (+ve North)";
+  parameter nSI.Time_hour t_zone = -8 "Local time zone (UCT=0)";
   parameter Integer year = 2015 "Meteorological year";
   // Field
-  parameter String opt_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Optics/gen3liq_salt_dagget.motab");
+  parameter String opt_file = Modelica.Utilities.Files.loadResource("modelica://SolarTherm/Data/Optics/example_optics.motab");
   parameter Solar_angles angles = Solar_angles.dec_hra "Angles used in the lookup table file";
   parameter Real SM = 2.7 "Solar multiple";
   parameter Real land_mult = 6.281845377885782 "Land area multiplier";
@@ -129,7 +129,7 @@ model CSP "High temperature salt-sCO2 system"
   parameter Real Ti = 0.1 "Time constant for integral component of receiver control";
   parameter Real Kp = -1000 "Gain of proportional component in receiver control";
   // Calculated Parameters
-  parameter SI.HeatFlowRate Q_rec_out = Q_flow_des * SM "Receiver thermal output at design point";
+  parameter SI.HeatFlowRate Q_rec_out = 50.4E6 "Receiver thermal output at design point";
   parameter SI.HeatFlowRate Q_flow_des = if fixed_field then if match_sam then R_des / ((1 + rec_fr) * SM) else R_des * (1 - rec_fr) / SM else P_gross / eff_blk "Heat to power block at design";
   parameter SI.Energy E_max = t_storage * 3600 * Q_flow_des "Maximum tank stored energy";
   parameter SI.Area A_field = R_des / eff_opt / he_av_design / dni_des "Heliostat field reflective area";
@@ -145,7 +145,7 @@ model CSP "High temperature salt-sCO2 system"
   parameter SI.Mass m_max = E_max / (h_hot_set - h_cold_set) "Max salt mass in tanks";
   parameter SI.Volume V_max = m_max / ((rho_hot_set + rho_cold_set) / 2) "Max salt volume in tanks";
   //Based on NREL Gen3 SAM model v14.02.2020
-  parameter SI.MassFlowRate m_flow_fac = SM * Q_flow_des / (h_hot_set - h_cold_set) "Mass flow rate to receiver at design point";
+  parameter SI.MassFlowRate m_flow_fac = 197.5 "Mass flow rate to receiver at design point";
   parameter SI.MassFlowRate m_flow_rec_max = max_rec_op_fr * m_flow_fac "Maximum mass flow rate to receiver";
   parameter SI.MassFlowRate m_flow_rec_start = 0.81394780966 * m_flow_fac "Initial or guess value of mass flow rate to receiver in the feedback controller";
   parameter SI.MassFlowRate m_flow_blk = Q_flow_des / (h_hot_set - h_cold_set) "Mass flow rate to power block at design point";
@@ -223,11 +223,13 @@ model CSP "High temperature salt-sCO2 system"
     Placement(visible = true, transformation(extent = {{-132, -56}, {-102, -28}}, rotation = 0)));
   //DNI_input
   Modelica.Blocks.Sources.RealExpression DNI_input(y = data.DNI) annotation(
-    Placement(visible = true, transformation(extent = {{-138, 88}, {-118, 108}}, rotation = 0)));
+    Placement(visible = true, transformation(extent = {{-130, 84}, {-110, 104}}, rotation = 0)));
   //Tamb_input
+  Modelica.Blocks.Sources.RealExpression Tamb_input(y = data.Tdry) annotation(
+    Placement(transformation(extent = {{140, 70}, {120, 90}})));
   //WindSpeed_input
   Modelica.Blocks.Sources.RealExpression Wspd_input(y = data.Wspd) annotation(
-    Placement(visible = true, transformation(extent = {{-146, 44}, {-120, 64}}, rotation = 0)));
+    Placement(transformation(extent = {{-140, 20}, {-114, 40}})));
   //pressure_input
   //parasitic inputs
   // Or block for defocusing
@@ -235,15 +237,11 @@ model CSP "High temperature salt-sCO2 system"
   SolarTherm.Models.Sources.SolarModel.Sun sun(lon = data.lon, lat = data.lat, t_zone = data.t_zone, year = data.year, redeclare function solarPosition = Models.Sources.SolarFunctions.PSA_Algorithm) annotation(
     Placement(transformation(extent = {{-82, 60}, {-62, 80}})));
   // Solar field
-  SolarTherm.Models.CSP.CRS.HeliostatsField.HeliostatsFieldSAM heliostatsField(redeclare model Optical = Models.CSP.CRS.HeliostatsField.Optical.Table(angles = angles, file = opt_file), A_h = A_heliostat, Wspd_max = Wspd_max, ele_min(displayUnit = "deg") = ele_min, he_av = he_av_design, lat = data.lat, lon = data.lon, n_h = 8700, nu_defocus = nu_defocus, nu_min = nu_min_sf, nu_start = nu_start, use_defocus = false, use_on = true, use_wind = true) annotation(
+  SolarTherm.Models.CSP.CRS.HeliostatsField.HeliostatsFieldSAM heliostatsField(redeclare model Optical = Models.CSP.CRS.HeliostatsField.Optical.Table(angles = angles, file = opt_file), A_h = A_heliostat, Q_design = Q_rec_out, Wspd_max = Wspd_max, ele_min(displayUnit = "deg") = ele_min, he_av = he_av_design, lat = data.lat, lon = data.lon, n_h = 1800, nu_defocus = nu_defocus, nu_min = nu_min_sf, nu_start = nu_start, use_defocus = false, use_on = true, use_wind = use_wind) annotation(
     Placement(transformation(extent = {{-88, 2}, {-56, 36}})));
   // Receiver
-  SolarTherm.Models.CSP.CRS.Receivers.ChlorideSaltReceiver receiver(redeclare package Medium = Medium, em = em_rec, H_rcv = H_receiver, D_rcv = D_receiver, N_pa = N_pa_rec, t_tb = t_tb_rec, D_tb = D_tb_rec, ab = ab_rec, m_flow_rec_des = m_flow_fac, const_alpha = true) annotation(
+  SolarTherm.Models.CSP.CRS.Receivers.ChlorideSaltReceiver receiver(redeclare package Medium = Medium, D_rcv = 7.6, D_tb = D_tb_rec, H_rcv = 9.3, H_tower = 110, N_pa = 16, ab = ab_rec, const_alpha = true, em = em_rec, m_flow_rec_des = 197.8, t_tb = t_tb_rec) annotation(
     Placement(transformation(extent = {{-46, 4}, {-10, 40}})));
-  Modelica.Fluid.Sources.Boundary_pT boundary1(redeclare package Medium = Medium, T = 468 + 273.15, nPorts = 1, p = 1e5, use_T_in = false, use_p_in = false) annotation(
-    Placement(visible = true, transformation(origin = {67, -10}, extent = {{5, -8}, {-5, 8}}, rotation = 0)));
-  Modelica.Fluid.Sources.MassFlowSource_h sinkHot(redeclare package Medium = Medium, m_flow = -745, nPorts = 1, use_m_flow_in = false) annotation(
-    Placement(visible = true, transformation(origin = {66, 34}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
   // Hot tank
   // Pump hot
   // Cold tank
@@ -258,10 +256,19 @@ model CSP "High temperature salt-sCO2 system"
   //SI.Power P_elec "Output power of power block";
   //SI.Energy E_elec(start = 0, fixed = true, displayUnit = "MW.h") "Generate electricity";
   //FI.Money R_spot(start = 0, fixed = true) "Spot market revenue";
-  Modelica.Blocks.Sources.RealExpression Tamb_input(y = data.Tdry) annotation(
-    Placement(visible = true, transformation(extent = {{140, 70}, {120, 90}}, rotation = 0)));
-  Modelica.Blocks.Sources.RealExpression Pres_input(y = data.Pres) annotation(
-    Placement(visible = true, transformation(origin = {94, 66}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Constant const(k = 1) annotation(
+    Placement(visible = true, transformation(origin = {2, 60}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Constant constant1(k = 0) annotation(
+    Placement(visible = true, transformation(origin = {72, 108}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Fluid.Sources.Boundary_pT boundary1(redeclare package Medium = Medium, T = 500 + 273.15, nPorts = 1, p = 1e5, use_T_in = false, use_p_in = false) annotation(
+    Placement(visible = true, transformation(origin = {41, -28}, extent = {{5, -8}, {-5, 8}}, rotation = 0)));
+  //ESTE VARIA (LOAD)
+  Modelica.Fluid.Sources.MassFlowSource_h sinkHot(redeclare package Medium = Medium, m_flow = -68.7, nPorts = 1, use_m_flow_in = false) annotation(
+    Placement(visible = true, transformation(origin = {-82, -28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Modelica.Blocks.Sources.Constant constant3(k = 36.8571 + 273.15) annotation(
+    Placement(visible = true, transformation(origin = {-32, 114}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  sCO2_cycle.sco2_cycle_simple sco2_cycle_simple annotation(
+    Placement(visible = true, transformation(origin = {97, 31}, extent = {{-31, -31}, {31, 31}}, rotation = 0)));
 initial equation
   if fixed_field then
     P_gross = Q_flow_des * eff_cyc;
@@ -280,9 +287,9 @@ initial equation
 equation
 //Connections from data
   connect(DNI_input.y, sun.dni) annotation(
-    Line(points = {{-117, 98}, {-102, 98}, {-102, 69.8}, {-82.6, 69.8}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
+    Line(points = {{-109, 94}, {-102, 94}, {-102, 69.8}, {-82.6, 69.8}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
   connect(Wspd_input.y, heliostatsField.Wspd) annotation(
-    Line(points = {{-119, 54}, {-100, 54}, {-100, 29.54}, {-87.68, 29.54}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
+    Line(points = {{-112.7, 30}, {-100, 30}, {-100, 29.54}, {-87.68, 29.54}}, color = {0, 0, 127}, pattern = LinePattern.Dot));
 // Fluid connections
 // controlCold connections
 // controlHot connections
@@ -294,24 +301,28 @@ equation
 //PowerBlock connections
   connect(heliostatsField.on, receiver.on) annotation(
     Line(points = {{-82, 2}, {-82, -20}, {-44, -20}, {-44, 5}, {-39, 5}}, color = {255, 0, 255}));
-// P_elec = powerBlock.W_net;
+//P_elec = powerBlock.W_net;
 //E_elec = powerBlock.E_net;
-// R_spot = market.profit;
-  connect(Tamb_input.y, receiver.Tamb) annotation(
-    Line(points = {{120, 80}, {-28, 80}, {-28, 36}, {-28, 36}}, color = {0, 0, 127}));
+//R_spot = market.profit;
   connect(receiver.fluid_a, boundary1.ports[1]) annotation(
-    Line(points = {{-24, 6}, {50, 6}, {50, -10}, {62, -10}, {62, -10}}, color = {0, 127, 255}));
-  connect(sinkHot.ports[1], receiver.fluid_b) annotation(
-    Line(points = {{56, 34}, {2, 34}, {2, 32}, {-22, 32}, {-22, 30}}, color = {0, 127, 255}));
+    Line(points = {{-24, 6}, {2, 6}, {2, -28}, {36, -28}, {36, -28}}, color = {0, 127, 255}));
+  connect(receiver.fluid_b, sco2_cycle_simple.port_a) annotation(
+    Line(points = {{-22, 30}, {36, 30}, {36, 44}, {84, 44}, {84, 42}}, color = {0, 127, 255}));
+  connect(sinkHot.ports[1], sco2_cycle_simple.port_b) annotation(
+    Line(points = {{-72, -28}, {8, -28}, {8, 14}, {80, 14}, {80, 12}}, color = {0, 127, 255}));
+  connect(receiver.Tamb, Tamb_input.y) annotation(
+    Line(points = {{-28, 36}, {-24, 36}, {-24, 80}, {120, 80}, {120, 80}}, color = {0, 0, 127}));
 protected
   annotation(
-    Diagram(coordinateSystem(extent = {{-140, -120}, {160, 140}}, initialScale = 0.1), graphics = {Text(lineColor = {217, 67, 180}, extent = {{4, 92}, {40, 90}}, textString = "defocus strategy", fontSize = 9), Text(lineColor = {217, 67, 180}, extent = {{-50, -40}, {-14, -40}}, textString = "on/off strategy", fontSize = 9), Text(origin = {2, 2}, extent = {{-52, 8}, {-4, -12}}, textString = "Receiver", fontSize = 6, fontName = "CMU Serif"), Text(origin = {12, 4}, extent = {{-110, 4}, {-62, -16}}, textString = "Heliostats Field", fontSize = 6, fontName = "CMU Serif"), Text(origin = {4, -8}, extent = {{-80, 86}, {-32, 66}}, textString = "Sun", fontSize = 6, fontName = "CMU Serif"), Text(origin = {-4, 2}, extent = {{0, 58}, {48, 38}}, textString = "Hot Tank", fontSize = 6, fontName = "CMU Serif"), Text(extent = {{30, -24}, {78, -44}}, textString = "Cold Tank", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 4}, extent = {{-6, 20}, {42, 0}}, textString = "Receiver Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 32}, extent = {{30, 62}, {78, 42}}, textString = "Power Block Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {8, -26}, extent = {{-146, -26}, {-98, -46}}, textString = "Data Source", fontSize = 7, fontName = "CMU Serif")}),
+    Diagram(coordinateSystem(extent = {{-140, -120}, {160, 140}}, initialScale = 0.1), graphics = {Text(lineColor = {217, 67, 180}, extent = {{4, 92}, {40, 90}}, textString = "defocus strategy", fontSize = 9), Text(lineColor = {217, 67, 180}, extent = {{-50, -40}, {-14, -40}}, textString = "on/off strategy", fontSize = 9), Text(origin = {2, 2}, extent = {{-52, 8}, {-4, -12}}, textString = "Receiver", fontSize = 6, fontName = "CMU Serif"), Text(origin = {12, 4}, extent = {{-110, 4}, {-62, -16}}, textString = "Heliostats Field", fontSize = 6, fontName = "CMU Serif"), Text(origin = {4, -8}, extent = {{-80, 86}, {-32, 66}}, textString = "Sun", fontSize = 6, fontName = "CMU Serif"), Text(origin = {-4, 2}, extent = {{0, 58}, {48, 38}}, textString = "Hot Tank", fontSize = 6, fontName = "CMU Serif"), Text(extent = {{30, -24}, {78, -44}}, textString = "Cold Tank", fontSize = 6, fontName = "CMU Serif"), Text(origin = {10, -56}, extent = {{80, 12}, {128, -8}}, textString = "Power Block", fontSize = 6, fontName = "CMU Serif"), Text(origin = {6, 0}, extent = {{112, 16}, {160, -4}}, textString = "Market", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 4}, extent = {{-6, 20}, {42, 0}}, textString = "Receiver Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {2, 32}, extent = {{30, 62}, {78, 42}}, textString = "Power Block Control", fontSize = 6, fontName = "CMU Serif"), Text(origin = {8, -26}, extent = {{-146, -26}, {-98, -46}}, textString = "Data Source", fontSize = 7, fontName = "CMU Serif")}),
     Icon(coordinateSystem(extent = {{-140, -120}, {160, 140}})),
-    experiment(StopTime = 3.5e10, StartTime = 0, Tolerance = 0.0001, Interval = 35000),
+    experiment(StopTime = 3.1536e+07, StartTime = 0, Tolerance = 0.0001, Interval = 1800),
     __Dymola_experimentSetupOutput,
     Documentation(revisions = "<html>
 	<ul>
-	<li> A. Shirazi and A. Fontalvo Lascano (June 2019) :<br>Released first version. </li>
+	<li> D.Martinez and J.Negrete (June 2019) :<br>Released first version. </li>
 	</ul>
 	</html>"));
-end CSP;
+
+
+end System_completed;

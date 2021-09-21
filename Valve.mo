@@ -1,69 +1,54 @@
 within sCO2_cycle;
 model Valve
-  replaceable package Medium =  sCO2_cycle.CarbonDioxide
-constrainedby Modelica.Media.Interfaces.PartialMedium
-   "Medium in the component";
-    
-  Modelica.Fluid.Interfaces.FluidPort_b fluid_b2(redeclare package Medium =
-        Medium) annotation (Placement(transformation(extent={{-10,0},{10,20}}),
-        iconTransformation(extent={{-10,0},{10,20}})));
-  Modelica.Fluid.Interfaces.FluidPort_a fluid_a(redeclare package Medium =
-        Medium) annotation (Placement(transformation(extent={{-60,60},{-40,80}}),
-        iconTransformation(extent={{-60,60},{-40,80}})));
-  Modelica.Fluid.Interfaces.FluidPort_b fluid_b1(redeclare package Medium =
-        Medium) annotation (Placement(transformation(extent={{40,60},{60,80}}),
-        iconTransformation(extent={{40,60},{60,80}})));
-  Modelica.Blocks.Interfaces.RealInput opening annotation (Placement(
-        transformation(
-        extent={{-20,-20},{20,20}},
-        rotation=-90,
-        origin={0,100}), iconTransformation(
-        extent={{-6,-6},{6,6}},
-        rotation=-90,
-        origin={0,98})));
-equation
-   fluid_a.p=fluid_b2.p;
-   fluid_b1.p=fluid_a.p;
+	//extends SolarTherm.Media.CO2.PropCO2;
+	replaceable package MedRec = sCO2_cycle.CarbonDioxide;
+	import SI = Modelica.SIunits;
+    import Modelica.SIunits.Conversions.*;
+	parameter Real gamma;
+	Real gamma_var;
+	//VARIABLES DE INICIALIZACION
+	parameter String fluid = "R744" "Turbine working fluid (default: CO2)";
+	parameter SI.Temperature T_in_des = from_degC(700) ;
+	parameter SI.Pressure p_in_des = 25e6 ;
+	parameter SI.Temperature T_amb=from_degC(25);//Temperature ambiental
+	parameter SI.SpecificEnthalpy h_in_des=stprops("H","T",T_in_des,"P",p_in_des,fluid);
+	parameter SI.SpecificEnthalpy h_out_des_maincomp=stprops("H","T",T_in_des,"P",p_in_des,fluid);
+	parameter SI.SpecificEnthalpy h_out_des_mainrecomp=stprops("H","T",T_in_des,"P",p_in_des,fluid);
+	parameter SI.MassFlowRate m_flow_des_turb = 85.5 ;
+	parameter SI.MassFlowRate m_flow_des_maincomp = 0.221*85.5 ;
+	parameter SI.MassFlowRate m_flow_des_recomp = (1-0.221)*85.5 ;
+	
+	//VARIABLES
+	SI.SpecificEnthalpy h_in(start=h_in_des);
+	SI.MassFlowRate m_flow_turb(start=m_flow_des_turb);
+	SI.Pressure p_in(start=p_in_des);
 
-   fluid_a.h_outflow=inStream(fluid_a.h_outflow);
-   fluid_b1.h_outflow=inStream(fluid_a.h_outflow);
-   fluid_b2.h_outflow=inStream(fluid_a.h_outflow);
-
-   //fluid_a.Xi_outflow=inStream(fluid_a.Xi_outflow);
-   fluid_b2.Xi_outflow=inStream(fluid_a.Xi_outflow);
-   fluid_b1.Xi_outflow=inStream(fluid_a.Xi_outflow);
-
-   fluid_b1.m_flow=-opening*fluid_a.m_flow;
-   fluid_b2.m_flow=-(1-opening)*fluid_a.m_flow;
-
-  annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,0},
-            {100,100}})),              Icon(coordinateSystem(extent={{-100,0},{100,
-            100}}, preserveAspectRatio=false), graphics={
-        Polygon(
-          points={{50,100},{50,40},{0,70},{50,100}},
-          lineColor={0,0,0},
-          smooth=Smooth.None,
-          fillPattern=FillPattern.Solid,
-          fillColor={0,0,0}),
-        Polygon(
-          points={{-50,100},{-50,40},{0,70},{-50,100}},
-          lineColor={0,0,0},
-          smooth=Smooth.None,
-          fillColor={0,0,0},
-          fillPattern=FillPattern.Solid),
-        Polygon(
-          points={{0,70},{-40,10},{40,10},{0,70}},
-          lineColor={0,0,0},
-          smooth=Smooth.None,
-          fillColor={0,0,0},
-          fillPattern=FillPattern.Solid),
-        Line(
-          points={{0,100},{0,70}},
-          color={0,0,0},
-          smooth=Smooth.None)}),
-    Documentation(revisions="<html>
-<ul>
-<li>Alberto de la Calle:<br>Released first version. </li>
-</ul>
-</html>"));
+	
+	
+	
+	
+	
+	
+	Modelica.Fluid.Interfaces.FluidPort_a port_a(redeclare package Medium = MedRec) annotation(
+		Placement(visible = true, transformation(origin = {70, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {80, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+	Modelica.Fluid.Interfaces.FluidPort_b gamma_port_b(redeclare package Medium = MedRec) annotation(
+		Placement(visible = true, transformation(origin = {0, 78}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {2, 84}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+	Modelica.Fluid.Interfaces.FluidPort_b one_gamma_port_b(redeclare package Medium = MedRec) annotation(
+		Placement(visible = true, transformation(origin = {-70, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-80, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+	equation
+	 gamma_var=gamma;
+	gamma_port_b.m_flow =  -(gamma_var)* m_flow_turb;
+	one_gamma_port_b.m_flow =  -(1-gamma_var) * m_flow_turb;
+	m_flow_turb=port_a.m_flow;
+	gamma_port_b.p =p_in;
+	one_gamma_port_b.p = p_in;
+	p_in=port_a.p;
+	gamma_port_b.h_outflow = h_in;
+	one_gamma_port_b.h_outflow = h_in;
+	h_in=inStream(port_a.h_outflow);
+	port_a.h_outflow = 0.0;
+	
+	annotation(
+		Icon(graphics = {Text(origin = {0, 10}, extent = {{-56, -16}, {56, 16}}, textString = "SPLITTER")}),
+		Diagram(graphics = {Text(origin = {7, 8}, extent = {{-49, -16}, {49, 16}}, textString = "SPLITTER")}));
 end Valve;
